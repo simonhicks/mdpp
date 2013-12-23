@@ -192,8 +192,6 @@ endfunction
 function! MarkdownFoldFunction(lnum)
   if s:isBlank(getline(a:lnum))
     return '-1'
-  else
-    echom "NOT BLANK!"
   endif
   let l = s:sectionLevel(a:lnum) + s:listFoldModifier(a:lnum)
   if s:isHeading(a:lnum)
@@ -219,6 +217,13 @@ nnoremap <buffer> [[ :call <SID>gotoPreviousSibling()<CR>
 nnoremap <buffer> ]] :call <SID>gotoNextSibling()<CR>
 nnoremap <buffer> ( :call <SID>gotoParentHeading()<CR>
 nnoremap <buffer> ) :call <SID>gotoFirstChildHeading()<CR>
+
+vnoremap <buffer> [h :call <SID>gotoPreviousHeading()<CR>
+vnoremap <buffer> ]h :call <SID>gotoNextHeading()<CR>
+vnoremap <buffer> [[ :call <SID>gotoPreviousSibling()<CR>
+vnoremap <buffer> ]] :call <SID>gotoNextSibling()<CR>
+vnoremap <buffer> ( :call <SID>gotoParentHeading()<CR>
+vnoremap <buffer> ) :call <SID>gotoFirstChildHeading()<CR>
 
 " FIXME remove debug mapping
 nnoremap <buffer> g<CR> :echom <SID>isBlank(getline('.'))<CR>
