@@ -1,8 +1,8 @@
 " TODO
-" - change all references to md -> mdpp
 " - ftdetect for mdp filetype
 " - syntax for mdp filetype
 " - autoindent for mdp filetype
+" - change all references to md -> mdpp
 " - option to switch off interactive features (todo, checklists, tables, shell)
 " - option to switch off directories features (index, :Notes, etc.)
 
