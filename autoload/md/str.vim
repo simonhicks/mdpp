@@ -31,3 +31,16 @@ if g:with_todo_features
     return md#str#headingPrefix(a:str) . content
   endfunction
 end
+
+if g:with_checklist_features
+  call md#checklist#init()
+
+  function! md#str#getChecklistState(str)
+    return matchlist(a:str, '^ *\[\(.\)\]')[1]
+  endfunction
+
+  function! md#str#toggleChecklist(str)
+    let state = md#str#getChecklistState(a:str)
+    return substitute(a:str, '\['.state.'\]', '['.md#checklist#toggle(state).']', '')
+  endfunction
+endif

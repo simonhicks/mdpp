@@ -94,6 +94,26 @@ function! md#core#aroundHeading()
   endif
 endfunction
 
+function! md#core#insideMetadata()
+  let start = getpos('.')
+  call md#move#ensureHeading()
+  if md#line#hasMetadata('.')
+    normal! 0f{vi{
+  else
+    call setpos('.', start)
+  endif
+endfunction
+
+function! md#core#aroundMetadata()
+  let start = getpos('.')
+  call md#move#ensureHeading()
+  if md#line#hasMetadata('.')
+    normal! 0f{va{
+  else
+    call setpos('.', start)
+  endif
+endfunction
+
 " tree manipulation
 
 function! md#core#incHeading()
@@ -185,6 +205,32 @@ if g:with_todo_features
       call md#line#decTodoState('.')
     finally
       call setpos('.', pos)
+    endtry
+  endfunction
+endif
+
+" checklist toggling
+if g:with_checklist_features
+  call md#checklist#init()
+
+  function! md#core#toggleChecklist()
+    let pos = getpos('.')
+    let mark_a = getpos("'<")
+    let mark_b = getpos("'>")
+    try
+      if md#line#isChecklistItem('.')
+        normal! vip
+        let firstLine = line("'<")
+        let lastLine = line("'>")
+        execute "normal! \<esc>"
+        call setpos('.', pos)
+        call md#line#toggleChecklistItem('.')
+        call md#checklist#refresh(firstLine, lastLine)
+      endif
+    finally
+      call setpos('.', pos)
+      call setpos("'<", mark_a)
+      call setpos("'>", mark_b)
     endtry
   endfunction
 endif

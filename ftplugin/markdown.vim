@@ -17,6 +17,8 @@ onoremap <buffer> it :call md#core#insideTree()<CR>
 onoremap <buffer> at :call md#core#aroundTree()<CR>
 onoremap <buffer> ih :call md#core#insideHeading()<CR>
 onoremap <buffer> ah :call md#core#aroundHeading()<CR>
+onoremap <buffer> im :call md#core#insideMetadata()<CR>
+onoremap <buffer> am :call md#core#aroundMetadata()<CR>
 
 vnoremap <buffer> is :<C-u>call md#core#insideSection()<CR>
 vnoremap <buffer> as :<C-u>call md#core#aroundSection(0)<CR>
@@ -24,6 +26,8 @@ vnoremap <buffer> it :<C-u>call md#core#insideTree()<CR>
 vnoremap <buffer> at :<C-u>call md#core#aroundTree()<CR>
 vnoremap <buffer> ih :<C-u>call md#core#insideHeading()<CR>
 vnoremap <buffer> ah :<C-u>call md#core#aroundHeading()<CR>
+vnoremap <buffer> im :<C-u>call md#core#insideMetadata()<CR>
+vnoremap <buffer> am :<C-u>call md#core#aroundMetadata()<CR>
 
 " tree manipulation mappings
 nnoremap <buffer> [h :call md#core#decHeading()<CR>
@@ -52,5 +56,10 @@ if g:with_todo_features
 
   nnoremap <buffer> [d :call md#core#decTodo()<CR>
   nnoremap <buffer> ]d :call md#core#incTodo()<CR>
-  " TODO configurable colors for the states
+endif
+
+if g:with_checklist_features
+  call md#checklist#init()
+
+  nnoremap <buffer> g<CR> :silent call md#core#toggleChecklist()<CR>
 endif

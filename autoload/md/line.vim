@@ -50,6 +50,10 @@ function! md#line#isListItem(lnum)
   return match(getline(a:lnum), "^[[:space:]]*- ") != -1
 endfunction
 
+function! md#line#hasMetadata(lnum)
+  return md#line#isHeading(a:lnum) && match(getline(a:lnum), '{.*} *$') != -1
+endfunction
+
 function! md#line#underlinedHeadingLevel(lnum)
   let nextLine = md#str#trim(getline(md#line#num(a:lnum) + 1))
   if match(nextLine, '^==*$') != -1
@@ -130,5 +134,18 @@ if g:with_todo_features
                 \ . "Can't modify todo state for non heading line"
       throw message
     endif
+  endfunction
+endif
+
+if g:with_checklist_features
+  call md#checklist#init()
+
+  function! md#line#isChecklistItem(lnum)
+    return match(getline(a:lnum), "^ *\\[\\(X\\|/\\| \\)\\] ") != -1
+  endfunction
+
+  function! md#line#toggleChecklistItem(lnum)
+    let line = getline(a:lnum)
+    call setline(a:lnum, md#str#toggleChecklist(line))
   endfunction
 endif
