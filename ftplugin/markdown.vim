@@ -1,3 +1,11 @@
+" TODO
+" - change all references to md -> mdpp
+" - ftdetect for mdp filetype
+" - syntax for mdp filetype
+" - autoindent for mdp filetype
+" - option to switch off interactive features (todo, checklists, tables, shell)
+" - option to switch off directories features (index, :Notes, etc.)
+
 " code folding
 setlocal foldmethod=expr
 setlocal foldexpr=md#core#fold(v:lnum)
@@ -31,10 +39,18 @@ nnoremap <buffer> ]] :call md#move#toNextSibling()<CR>
 nnoremap <buffer> (  :call md#move#toParentHeading()<CR>
 nnoremap <buffer> )  :call md#move#toFirstChildHeading()<CR>
 
-" TODO make these motions better (store V state, no yucky echom, etc.)
+" FIXME make these motions better (store V state, no yucky echom, etc.)
 vnoremap <buffer> [h :<C-u>call md#move#toPreviousHeading()<CR>
 vnoremap <buffer> ]h :<C-u>call md#move#toNextHeading()<CR>
 vnoremap <buffer> [[ :<C-u>call md#move#toPreviousSibling()<CR>
 vnoremap <buffer> ]] :<C-u>call md#move#toNextSibling()<CR>
 vnoremap <buffer> (  :<C-u>call md#move#toParentHeading()<CR>
 vnoremap <buffer> )  :<C-u>call md#move#toFirstChildHeading()<CR>
+
+if g:with_todo_features
+  call md#todo#init()
+
+  nnoremap <buffer> [d :call md#core#decTodo()<CR>
+  nnoremap <buffer> ]d :call md#core#incTodo()<CR>
+  " TODO configurable colors for the states
+endif

@@ -17,28 +17,36 @@ endfunction
 
 function! md#move#upToLevel(target)
   let start = getpos('.')
-  call md#move#upUntilLevel(a:target)
-  normal! k
-  if md#line#isHeading('.')
-    normal! 0
-    return md#line#num('.')
-  else
+  try
+    call md#move#upUntilLevel(a:target)
+    normal! k
+    if md#line#isHeading('.')
+      normal! 0
+      return md#line#num('.')
+    else
+      call setpos('.', start)
+      return -1
+    endif
+  catch
     call setpos('.', start)
-    return -1
-  endif
+  endtry
 endfunction
 
 function! md#move#downToLevel(target)
   let start = getpos('.')
-  call md#move#downUntilLevel(a:target)
-  normal! j
-  if md#line#isHeading('.')
-    normal! 0
-    return md#line#num('.')
-  else
+  try
+    call md#move#downUntilLevel(a:target)
+    normal! j
+    if md#line#isHeading('.')
+      normal! 0
+      return md#line#num('.')
+    else
+      call setpos('.', start)
+      return -1
+    endif
+  catch
     call setpos('.', start)
-    return -1
-  endif
+  endtry
 endfunction
 
 function! md#move#toNextHeading()
@@ -67,6 +75,12 @@ function! md#move#toParentHeading()
     return md#move#upToLevel(md#line#headingLevel('.') - 1)
   else
     return md#move#toPreviousHeading()
+  endif
+endfunction
+
+function! md#move#ensureHeading()
+  if !md#line#isHeading('.')
+    call md#move#toParentHeading()
   endif
 endfunction
 

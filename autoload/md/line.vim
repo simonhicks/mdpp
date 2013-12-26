@@ -86,3 +86,49 @@ function! md#line#sectionLevel(lnum)
   return (found > 0) ? md#line#headingLevel(found) : -1
 endfunction
 
+if g:with_todo_features
+  call md#todo#init()
+
+  function! md#line#getTodoState(lnum)
+    if md#line#isHeading(a:lnum)
+      return md#str#getTodoState(getline(a:lnum))
+    else
+      let message = "Line " . md#line#num(a:lnum) . " is not a heading." 
+                \ . " Can't get todo state for non heading line"
+      throw message
+    endif
+  endfunction
+
+  function! md#line#setTodoState(lnum, state)
+    if md#line#isHeading(a:lnum)
+      let string = md#str#setTodoState(getline(a:lnum), a:state)
+      call setline(a:lnum, string)
+    else
+      let message = "Line " . md#line#num(a:lnum) . " is not a heading." 
+                \ . "Can't modify todo state for non heading line"
+      throw message
+    endif
+  endfunction
+
+  function! md#line#incTodoState(lnum)
+    if md#line#isHeading(a:lnum)
+      let state = md#todo#next(md#line#getTodoState(a:lnum))
+      return md#line#setTodoState(a:lnum, state)
+    else
+      let message = "Line " . md#line#num(a:lnum) . " is not a heading." 
+                \ . "Can't modify todo state for non heading line"
+      throw message
+    endif
+  endfunction
+
+  function! md#line#decTodoState(lnum)
+    if md#line#isHeading(a:lnum)
+      let state = md#todo#prev(md#line#getTodoState(a:lnum))
+      return md#line#setTodoState(a:lnum, state)
+    else
+      let message = "Line " . md#line#num(a:lnum) . " is not a heading." 
+                \ . "Can't modify todo state for non heading line"
+      throw message
+    endif
+  endfunction
+endif

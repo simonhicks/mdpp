@@ -17,26 +17,24 @@ blah blah blah
   - nested list 3b
 
 ## heading 2
-
 blah blah blah
 blah blah blah
 blah blah blah
 
-### heading 3
+### heading 3a
+blah blah blah a
+blah blah blah a
+blah blah blah a
 
-blah blah blah
-blah blah blah
-blah blah blah
+### heading 3b
+blah blah blah b
+blah blah blah b
+blah blah blah b
 
-### heading 3
-
-blah blah blah
-blah blah blah.
-blah blah blah
-### heading 3
-blah blah blah
-blah blah blah
-blah blah blah
+### heading 3c
+blah blah blah c
+blah blah blah c
+blah blah blah c
 
 heading 1
 =========

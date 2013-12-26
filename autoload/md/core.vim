@@ -46,6 +46,9 @@ function! md#core#aroundSection(op)
   if a:op
     normal! l
   endif
+  " if cursor is on the first character of a heading line, and there's no
+  " existing visual selection, then select that section... otherwise select
+  " the section surrounding the cursor
   if !((getpos("'<") == getpos("'>")) && (col('.') == 1) && md#line#isHeading('.'))
     call md#move#toParentHeading()
   endif
@@ -74,9 +77,7 @@ function! md#core#aroundTree()
 endfunction
 
 function! md#core#insideHeading()
-  if !md#line#isHeading('.')
-    call md#move#toParentHeading()
-  endif
+  call md#move#ensureHeading()
   if match(getline('.'), '^#') != -1
     execute "normal! f lvg_o"
   else
@@ -85,9 +86,7 @@ function! md#core#insideHeading()
 endfunction
 
 function! md#core#aroundHeading()
-  if !md#line#isHeading('.')
-    call md#move#toParentHeading()
-  endif
+  call md#move#ensureHeading()
   if match(getline('.'), '^#') != -1
     normal! vg_o
   else
@@ -99,53 +98,93 @@ endfunction
 
 function! md#core#incHeading()
   let pos = getpos('.')
-  normal! l
-  call md#move#toParentHeading()
-  let underline = md#line#underlinedHeadingLevel('.')
-  if underline == 1
-    normal! jviwr-k
-  elseif underline == 2
-    execute "normal! I### "
-    normal! jddk
-  else
-    normal! I#
-  endif
-  call setpos('.', pos)
+  try
+    normal! l
+    call md#move#toParentHeading()
+    let underline = md#line#underlinedHeadingLevel('.')
+    if underline == 1
+      normal! jviwr-k
+    elseif underline == 2
+      execute "normal! I### "
+      normal! jddk
+    else
+      normal! I#
+    endif
+  finally
+    call setpos('.', pos)
+  endtry
 endfunction
 
 function! md#core#decHeading()
   let pos = getpos('.')
-  normal! l
-  call md#move#toParentHeading()
-  let underline = md#line#underlinedHeadingLevel('.')
-  if underline == 1
-    return -1
-  elseif underline == 2
-    normal! jviwr=k
-  else
-    normal! x
-  endif
-  call setpos('.', pos)
+  try
+    normal! l
+    call md#move#toParentHeading()
+    let underline = md#line#underlinedHeadingLevel('.')
+    if underline == 1
+      return -1
+    elseif underline == 2
+      normal! jviwr=k
+    else
+      normal! x
+    endif
+  finally
+    call setpos('.', pos)
+  endtry
 endfunction
 
+" NOTE: this depends on the user's mappings for " & d being the defaults.
+" Hopefully that's not going to be a problem
 function! md#core#raiseSectionBack()
   let stored = @a
-  let level = md#line#sectionLevel('.')
-  normal "adas
-  call md#move#upToLevel(level - 1)
-  normal! "aP
-  call md#core#decHeading()
-  let @a = stored
+  try
+    let level = md#line#sectionLevel('.')
+    normal "adas
+    call md#move#upToLevel(level - 1)
+    normal! "aP
+    call md#core#decHeading()
+  finally
+    let @a = stored
+  endtry
 endfunction
 
+" NOTE: this depends on the user's mappings for " & d being the defaults.
+" Hopefully that's not going to be a problem
 function! md#core#raiseSectionForward()
   let stored = @a
-  let level = md#line#sectionLevel('.')
-  normal "adas
-  normal! k
-  call md#move#downToLevel(level - 1)
-  normal! "aP
-  call md#core#decHeading()
-  let @a = stored
+  try
+    let level = md#line#sectionLevel('.')
+    normal "adas
+    normal! k
+    call md#move#downToLevel(level - 1)
+    normal! "aP
+    call md#core#decHeading()
+  finally
+    let @a = stored
+  endtry
 endfunction
 
+" todo state cycling
+if g:with_todo_features
+  call md#todo#init()
+
+  function! md#core#incTodo()
+    let pos = getpos('.')
+    try
+      call md#move#ensureHeading()
+      call md#line#incTodoState('.')
+    finally
+      call setpos('.', pos)
+    endtry
+  endfunction
+
+  function! md#core#decTodo()
+    let pos = getpos('.')
+    try
+      call md#move#ensureHeading()
+      call md#line#decTodoState('.')
+    finally
+      call setpos('.', pos)
+    endtry
+  endfunction
+endif
