@@ -6,7 +6,7 @@ function! md#todo#highlight(state, obj)
   execute "highlight markdownState" . a:state . desc
 
   execute "syn keyword markdownState" . a:state . " " . a:state
-        \." containedin=markdownH1,markdownH2,markdownH3,markdownH4,markdownH5,markdownH6"
+        \." containedin=markdownH1,markdownH2,markdownH3,markdownH4,markdownH5,markdownH6 contained"
 endfunction
 
 function! md#todo#init()
