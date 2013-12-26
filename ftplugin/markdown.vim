@@ -1,4 +1,12 @@
 " general util functions
+function! s:up()
+  execute "normal! k"
+endfunction
+
+function! s:down()
+  execute "normal! j"
+endfunction
+
 function! s:isBlank(str)
   return match(a:str, '^[[:space:]]*$') != -1
 endfunction
@@ -7,6 +15,9 @@ function! s:trim(str)
   return matchlist(a:str, '[[:space:]]*\(.\{-}\)[[:space:]]*$')[1]
 endfunction
 
+"""""""""""""""""""""""""""""""""""""""""
+" convert lnum to a number representation
+"""""""""""""""""""""""""""""""""""""""""
 function! s:line(lnum)
   if type(a:lnum) ==# 0
     return a:lnum
@@ -15,7 +26,38 @@ function! s:line(lnum)
   endif
 endfunction
 
-" heading functions
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" returns true, if lnum is a non heading line, or a heading of level `minimum`
+" or greater
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! s:atLeastLevel(minimum, lnum)
+  let level = s:headingLevel(a:lnum)
+  return level ==# 0 || level >= a:minimum
+endfunction
+
+""""""""""""""""""""""""""""""""""""""""
+" returns true if lnum is a heading line
+""""""""""""""""""""""""""""""""""""""""
+function! s:isHeading(lnum)
+  let lnum = s:line(a:lnum)
+  return s:headingLevel(lnum) > 0
+endfunction
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" returns true if lnum is a blank line immediately before a heading line
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! s:isBlankBeforeHeading(lnum)
+  let lnum = s:line(a:lnum)
+  return s:isBlank(getline(lnum)) && s:isHeading(lnum + 1)
+endfunction
+
+""""""""""""""""""""""""""""""""""""""""""""""
+" returns true if lnum is a heading underline
+""""""""""""""""""""""""""""""""""""""""""""""
+function! s:isUnderline(lnum)
+  let lnum = s:line(a:lnum)
+  return s:isHeading(lnum - 1) && match(getline(lnum), '^[=-][=-]*$') != -1
+endfunction
 
 function! s:underlinedHeadingLevel(lnum)
   let nextLine = s:trim(getline(s:line(a:lnum) + 1))
@@ -32,13 +74,6 @@ function! s:hashHeadingLevel(lnum)
   return len(matchstr(getline(a:lnum), "^#*"))
 endfunction
 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" The heading level of the specified line
-"
-"   @arg  lnum  The Line to check
-"
-"   @return   The heading level of lnum
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! s:headingLevel(lnum)
   let l1 = s:underlinedHeadingLevel(a:lnum)
   if l1 > 0
@@ -48,88 +83,88 @@ function! s:headingLevel(lnum)
   endif
 endfunction
 
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Is the specified line number a heading.
-"
-"   @arg  lnum  The line to check
-"
-"   @return   1 iff lnum is a heading else 0
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! s:isHeading(lnum)
-  return s:headingLevel(a:lnum) > 0
+function! s:upUntilLevel(target)
+  let curr = s:line('.')
+  while curr > 1 && s:atLeastLevel(a:target + 1, curr - 1)
+    call s:up()
+    let curr = s:line('.')
+  endwhile
 endfunction
 
-function! s:gotoHeading(dir)
-  let result = -1
-  try
-    let pattern = @/
-    execute a:dir . "^\\(#\\|.*\\n[-=]\\{2,\\}\\)"
-    let result = s:line('.')
-  catch
-    " nop
-  finally
-    let @/ = pattern
-  endtry
-  return result
+function! s:downUntilLevel(target)
+  let curr = s:line('.')
+  let last = s:line('$')
+  while !(curr ==# last) && s:atLeastLevel(a:target + 1, curr + 1)
+    call s:down()
+    let curr = s:line('.')
+  endwhile
+endfunction
+
+function! s:upToLevel(target)
+  let start = getpos('.')
+  call s:upUntilLevel(a:target)
+  call s:up()
+  if s:isHeading('.')
+    execute "normal! 0"
+    return s:line('.')
+  else
+    call setpos('.', start)
+    return -1
+  endif
+endfunction
+
+function! s:downToLevel(target)
+  let start = getpos('.')
+  call s:downUntilLevel(a:target)
+  call s:down()
+  if s:isHeading('.')
+    execute "normal! 0"
+    return s:line('.')
+  else
+    call setpos('.', start)
+    return -1
+  endif
 endfunction
 
 function! s:gotoNextHeading()
-  return s:gotoHeading("/")
+  return s:downToLevel(10000)
 endfunction
 
 function! s:gotoPreviousHeading()
-  return s:gotoHeading("?")
-endfunction
-
-function! s:goBackToTargetLevel(target)
-  if s:sectionLevel('.')
-    let start = s:line('.')
-    let storedpos = getpos('.')
-    while (s:gotoPreviousHeading() < start) && (s:headingLevel('.') >= a:target)
-      if s:headingLevel('.') ==# a:target
-        return s:line('.')
-      endif
-    endwhile
-    call setpos('.', storedpos)
-  endif
-  return -1
+  return s:upToLevel(10000)
 endfunction
 
 function! s:gotoPreviousSibling()
-  return s:goBackToTargetLevel(s:sectionLevel('.'))
-endfunction
-
-function! s:goForwardToTargetLevel(target)
-  if s:sectionLevel('.')
-    let start = s:line('.')
-    let storedpos = getpos('.')
-    while (s:gotoNextHeading() > start) && (s:headingLevel('.') >= a:target)
-      if s:headingLevel('.') ==# a:target
-        return s:line('.')
-      endif
-    endwhile
-    call setpos('.', storedpos)
-  endif
-  return -1
+  return s:upToLevel(s:sectionLevel('.'))
 endfunction
 
 function! s:gotoNextSibling()
-  return s:goForwardToTargetLevel(s:sectionLevel('.'))
+  return s:downToLevel(s:sectionLevel('.'))
 endfunction
 
 function! s:gotoParentHeading()
   if !s:sectionLevel('.')
     return
+  elseif s:isHeading('.') && col('.') != 1
+    execute "normal! 0"
+    return s:line('.')
   elseif s:isHeading('.')
-    return s:goBackToTargetLevel(s:headingLevel('.') - 1)
+    return s:upToLevel(s:headingLevel('.') - 1)
   else
     return s:gotoPreviousHeading()
   endif
 endfunction
 
+function! s:gotoRootHeading()
+  if !s:sectionLevel('.')
+    return
+  else
+    return s:upToLevel(1)
+  endif
+endfunction
+
 function! s:gotoFirstChildHeading()
-  return s:goForwardToTargetLevel(s:sectionLevel('.') + 1)
+  return s:downToLevel(s:sectionLevel('.') + 1)
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -144,14 +179,15 @@ endfunction
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 function! s:previousHeadingLine(lnum)
   let answer = -1
-  let storedlnum = s:line('.')
+  " let storedlnum = s:line('.')
   let storedpos = getpos('.')
   execute a:lnum
   call s:gotoPreviousHeading()
-  let curr = s:line('.')
-  if curr < storedlnum
-    let answer = curr
-  endif
+  " let curr = s:line('.')
+  " if curr < storedlnum
+  "   let answer = curr
+  " endif
+  let answer = s:line('.')
   call setpos('.', storedpos)
   return answer
 endfunction
@@ -172,6 +208,8 @@ function! s:sectionLevel(lnum)
     return s:headingLevel(s:previousHeadingLine(a:lnum))
   endif
 endfunction
+
+" code folding
 
 function! s:isListItem(lnum)
   return match(getline(a:lnum), "^[[:space:]]*- ") != -1
@@ -203,11 +241,148 @@ function! MarkdownFoldFunction(lnum)
   endif
 endfunction
 
-" code folding
-
 setlocal foldmethod=expr
 setlocal foldexpr=MarkdownFoldFunction(v:lnum)
 
+
+" operator pending functions
+
+function! s:insideSection()
+  call s:gotoParentHeading()
+  let target = s:headingLevel('.')
+  call s:down()
+  if s:isUnderline('.')
+    call s:down()
+  endif
+  execute "normal! V"
+  call s:downUntilLevel(target)
+  if s:isBlankBeforeHeading('.')
+    call s:up()
+  endif
+endfunction
+
+function! s:aroundSection(op)
+  if a:op
+    execute "normal! l"
+  endif
+  if !((getpos("'<") == getpos("'>")) && (col('.') == 1) && s:isHeading('.'))
+    call s:gotoParentHeading()
+  endif
+  let target = s:headingLevel('.')
+  execute "normal! V"
+  call s:downUntilLevel(target)
+endfunction
+
+function! s:insideTree()
+  call s:gotoRootHeading()
+  call s:down()
+  if s:isUnderline('.')
+    call s:down()
+  endif
+  execute "normal! V"
+  call s:downUntilLevel(1)
+  if s:isBlankBeforeHeading('.')
+    call s:up()
+  endif
+endfunction
+
+function! s:aroundTree()
+  call s:gotoRootHeading()
+  execute "normal! V"
+  call s:downUntilLevel(1)
+endfunction
+
+function! s:insideHeading()
+  if !s:isHeading('.')
+    call s:gotoParentHeading()
+  endif
+  if match(getline('.'), '^#') != -1
+    execute "normal! f lvg_o"
+  else
+    execute "normal! vg_o"
+  endif
+endfunction
+
+function! s:aroundHeading()
+  if !s:isHeading('.')
+    call s:gotoParentHeading()
+  endif
+  if match(getline('.'), '^#') != -1
+    execute "normal! vg_o"
+  else
+    execute "normal! Vjo"
+  endif
+endfunction
+
+onoremap <buffer> is :call <SID>insideSection()<CR>
+vnoremap <buffer> is :<C-u>call <SID>insideSection()<CR>
+onoremap <buffer> as :call <SID>aroundSection(1)<CR>
+vnoremap <buffer> as :<C-u>call <SID>aroundSection(0)<CR>
+onoremap <buffer> it :call <SID>insideTree()<CR>
+vnoremap <buffer> it :<C-u>call <SID>insideTree()<CR>
+onoremap <buffer> at :call <SID>aroundTree()<CR>
+vnoremap <buffer> at :<C-u>call <SID>aroundTree()<CR>
+onoremap <buffer> ih :call <SID>insideHeading()<CR>
+vnoremap <buffer> ih :<C-u>call <SID>insideHeading()<CR>
+onoremap <buffer> ah :call <SID>aroundHeading()<CR>
+vnoremap <buffer> ah :<C-u>call <SID>aroundHeading()<CR>
+
+function! s:incHeading()
+  let pos = getpos('.')
+  normal! l
+  call s:gotoParentHeading()
+  let underline = s:underlinedHeadingLevel('.')
+  if underline == 1
+    normal! jviwr-k
+  elseif underline == 2
+    execute "normal! I### "
+    normal! jddk
+  else
+    normal! I#
+  endif
+  call setpos('.', pos)
+endfunction
+
+function! s:decHeading()
+  let pos = getpos('.')
+  normal! l
+  call s:gotoParentHeading()
+  let underline = s:underlinedHeadingLevel('.')
+  if underline == 1
+    return -1
+  elseif underline == 2
+    normal! jviwr=k
+  else
+    normal! x
+  endif
+  call setpos('.', pos)
+endfunction
+
+nnoremap <buffer> [r :call <SID>decHeading()<CR>
+nnoremap <buffer> ]r :call <SID>incHeading()<CR>
+
+function! s:raiseSectionBack()
+  let stored = @a
+  let level = s:sectionLevel('.')
+  normal "adas
+  call s:upToLevel(level - 1)
+  normal! "aP
+  call s:decHeading()
+  let @a = stored
+endfunction
+
+function! s:raiseSectionForward()
+  let stored = @a
+  let level = s:sectionLevel('.')
+  normal "adas
+  call s:downToLevel(level - 1)
+  normal! "aP
+  call s:decHeading()
+  let @a = stored
+endfunction
+
+nnoremap <buffer> [m :call <SID>raiseSectionBack()<CR>
+nnoremap <buffer> ]m :call <SID>raiseSectionForward()<CR>
 
 " mappings TODO make these motions better (store V state, no yucky echom, etc.)
 
@@ -218,12 +393,9 @@ nnoremap <buffer> ]] :call <SID>gotoNextSibling()<CR>
 nnoremap <buffer> ( :call <SID>gotoParentHeading()<CR>
 nnoremap <buffer> ) :call <SID>gotoFirstChildHeading()<CR>
 
-vnoremap <buffer> [h :call <SID>gotoPreviousHeading()<CR>
-vnoremap <buffer> ]h :call <SID>gotoNextHeading()<CR>
-vnoremap <buffer> [[ :call <SID>gotoPreviousSibling()<CR>
-vnoremap <buffer> ]] :call <SID>gotoNextSibling()<CR>
-vnoremap <buffer> ( :call <SID>gotoParentHeading()<CR>
-vnoremap <buffer> ) :call <SID>gotoFirstChildHeading()<CR>
-
-" FIXME remove debug mapping
-nnoremap <buffer> g<CR> :echom <SID>isBlank(getline('.'))<CR>
+vnoremap <buffer> [h :<C-u>call <SID>gotoPreviousHeading()<CR>
+vnoremap <buffer> ]h :<C-u>call <SID>gotoNextHeading()<CR>
+vnoremap <buffer> [[ :<C-u>call <SID>gotoPreviousSibling()<CR>
+vnoremap <buffer> ]] :<C-u>call <SID>gotoNextSibling()<CR>
+vnoremap <buffer> ( :<C-u>call <SID>gotoParentHeading()<CR>
+vnoremap <buffer> ) :<C-u>call <SID>gotoFirstChildHeading()<CR>
