@@ -134,7 +134,7 @@ function! md#core#raiseSectionBack()
   normal "adas
   call md#move#upToLevel(level - 1)
   normal! "aP
-  call s:decHeading()
+  call md#core#decHeading()
   let @a = stored
 endfunction
 
@@ -145,7 +145,7 @@ function! md#core#raiseSectionForward()
   normal! k
   call md#move#downToLevel(level - 1)
   normal! "aP
-  call s:decHeading()
+  call md#core#decHeading()
   let @a = stored
 endfunction
 

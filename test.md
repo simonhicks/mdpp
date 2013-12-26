@@ -35,7 +35,7 @@ blah blah blah.
 blah blah blah
 ### heading 3
 blah blah blah
-blah blah blah.
+blah blah blah
 blah blah blah
 
 heading 1
@@ -56,7 +56,6 @@ blah blah blah
 blah blah blah
 
 ### heading 3
-
 blah- blah- blah-
 blah- blah- blah-
 blah- blah- blah-
@@ -92,7 +91,7 @@ wibbly wobbly
 wibbly wobbly
 wibbly wobbly
 wibbly wobbly
- 
+
 ### heading 3cii
 
 blorgle blurgle

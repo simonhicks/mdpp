@@ -77,12 +77,12 @@ endfunction
 function! md#line#sectionLevel(lnum)
   let curr = md#line#num(a:lnum)
   let found = 0
-  while found == 0 && curr >= 1
+  while ((found == 0) && (curr >= 1))
     if md#line#isHeading(curr)
       let found = curr
     endif
-    let curr =- 1
+    let curr = curr - 1
   endwhile
-  return found ? md#line#headingLevel(found) : -1
+  return (found > 0) ? md#line#headingLevel(found) : -1
 endfunction
 
