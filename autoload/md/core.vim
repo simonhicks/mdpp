@@ -220,8 +220,9 @@ if g:with_checklist_features
     try
       if md#line#isChecklistItem('.')
         normal! vip
-        let firstLine = line("'<")
-        let lastLine = line("'>")
+        let lastLine = line('.')
+        normal! o
+        let firstLine = line('.')
         execute "normal! \<esc>"
         call setpos('.', pos)
         call md#line#toggleChecklistItem('.')

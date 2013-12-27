@@ -63,3 +63,4 @@ if g:with_checklist_features
 
   nnoremap <buffer> g<CR> :silent call md#core#toggleChecklist()<CR>
 endif
+

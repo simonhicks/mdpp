@@ -95,7 +95,7 @@ function! s:printList(items)
 endfunction
 
 function! md#checklist#refresh(start, end)
-  let start = getpos('.')
+  let pos = getpos('.')
   let lines = s:getLines(a:start, a:end)
   let items = s:getItems(lines)
   for item in items
@@ -104,5 +104,5 @@ function! md#checklist#refresh(start, end)
   let text = s:printList(items)
   execute md#line#num(a:start) . "," . md#line#num(a:end) . "d"
   call append(md#line#num(a:start) - 1, split(text, "\n"))
-  call setpos('.', start)
+  call setpos('.', pos)
 endfunction
