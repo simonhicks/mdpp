@@ -20,7 +20,7 @@ function! md#move#upToLevel(target)
   try
     call md#move#upUntilLevel(a:target)
     normal! k
-    if md#line#isHeading('.')
+    if md#line#isHeading('.') && md#line#headingLevel('.') == a:target
       normal! 0
       return md#line#num('.')
     else
@@ -37,7 +37,7 @@ function! md#move#downToLevel(target)
   try
     call md#move#downUntilLevel(a:target)
     normal! j
-    if md#line#isHeading('.')
+    if md#line#isHeading('.') && md#line#headingLevel('.') == a:target
       normal! 0
       return md#line#num('.')
     else
