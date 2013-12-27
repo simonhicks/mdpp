@@ -9,7 +9,7 @@ endfunction
 function! md#move#downUntilLevel(target)
   let curr = md#line#num('.')
   let last = md#line#num('$')
-  while !(curr ==# last) && md#line#isAtLeastLevel(curr + 1, a:target + 1)
+  while (curr != last) && md#line#isAtLeastLevel(curr + 1, a:target + 1)
     normal! j
     let curr = md#line#num('.')
   endwhile
