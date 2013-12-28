@@ -160,7 +160,7 @@ function! md#core#raiseSectionBack()
   try
     let level = md#line#sectionLevel('.')
     normal "adas
-    call md#move#upToLevel(level - 1)
+    call md#move#upToLevel(level - 1, 0)
     normal! "aP
     call md#core#decHeading()
   finally
@@ -176,7 +176,7 @@ function! md#core#raiseSectionForward()
     let level = md#line#sectionLevel('.')
     normal "adas
     normal! k
-    call md#move#downToLevel(level - 1)
+    call md#move#downToLevel(level - 1, 0)
     normal! "aP
     call md#core#decHeading()
   finally
