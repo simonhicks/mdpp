@@ -1,25 +1,11 @@
 " code folding
 
-function! s:listItemNesting(lnum)
-  return len(matchstr(getline(a:lnum), "^[[:space:]]*")) / 2
-endfunction
-
-function! s:listFoldModifier(lnum)
-  if md#line#isListItem(a:lnum)
-    return s:listItemNesting(a:lnum) + 1
-  else
-    return s:listItemNesting(a:lnum)
-  endif
-endfunction
-
 function! md#core#fold(lnum)
   if md#line#isBlank(a:lnum)
     return '-1'
   endif
-  let l = md#line#sectionLevel(a:lnum) + s:listFoldModifier(a:lnum)
+  let l = md#line#sectionLevel(a:lnum)
   if md#line#isHeading(a:lnum)
-    return '>' . l
-  elseif md#line#isListItem(a:lnum)
     return '>' . l
   else
     return '' . l
