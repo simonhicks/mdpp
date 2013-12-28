@@ -101,38 +101,6 @@ function! md#todo#init()
   endif
 endfunction
 
-function! s:aggregationRuleMatches(conditionStates, childrenStates)
-  for child in a:childrenStates
-    if index(a:conditionStates, child) == -1
-      return 0
-    end
-  endfor
-  return 1
-endfunction
-
-function! md#todo#applyAggregationRules(childrenStates)
-  if len(a:childrenStates) == 0
-    return ""
-  endif
-  " check if all children are the same
-  for state in g:mdpp_todo_all_states
-    if s:aggregationRuleMatches([state], a:childrenStates)
-      return state
-    endif
-  endfor
-  " check rules
-  for rule in s:aggregation_rules
-    if s:aggregationRuleMatches(rule[0], a:childrenStates)
-      return rule[1]
-    endif
-  endfor
-  return ""
-endfunction
-
-function! md#todo#aggregateState(childrenStates)
-  return s:aggregation_function(a:childrenStates)
-endfunction
-
 function! md#todo#getColors(state)
   if has_key(g:mdpp_todo_colors, a:state)
     return g:mdpp_todo_colors[a:state]
@@ -213,6 +181,7 @@ function! md#todo#setTodoState(lnum, state)
   endif
 endfunction
 
+" updating parent states
 function! md#todo#childStates(lnum)
   let pos = getpos('.')
   let states = []
@@ -235,8 +204,38 @@ function! md#todo#childStates(lnum)
   return states
 endfunction
 
-" update the todo state of the heading on line a:lnum based on the heading
-" states of it's children
+function! s:aggregationRuleMatches(conditionStates, childrenStates)
+  for child in a:childrenStates
+    if index(a:conditionStates, child) == -1
+      return 0
+    end
+  endfor
+  return 1
+endfunction
+
+function! md#todo#applyAggregationRules(childrenStates)
+  if len(a:childrenStates) == 0
+    return ""
+  endif
+  " check if all children are the same
+  for state in g:mdpp_todo_all_states
+    if s:aggregationRuleMatches([state], a:childrenStates)
+      return state
+    endif
+  endfor
+  " check rules
+  for rule in s:aggregation_rules
+    if s:aggregationRuleMatches(rule[0], a:childrenStates)
+      return rule[1]
+    endif
+  endfor
+  return ""
+endfunction
+
+function! md#todo#aggregateState(childrenStates)
+  return s:aggregation_function(a:childrenStates)
+endfunction
+
 function! md#todo#updateState(lnum)
   if md#line#isHeading(a:lnum)
     let newState = md#todo#aggregateState(md#todo#childStates(a:lnum))
