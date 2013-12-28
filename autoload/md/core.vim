@@ -194,30 +194,3 @@ if g:with_todo_features
     endtry
   endfunction
 endif
-
-" checklist toggling
-if g:with_checklist_features
-  call md#checklist#init()
-
-  function! md#core#toggleChecklist()
-    let pos = getpos('.')
-    let mark_a = getpos("'<")
-    let mark_b = getpos("'>")
-    try
-      if md#line#isChecklistItem('.')
-        normal! vip
-        let lastLine = line('.')
-        normal! o
-        let firstLine = line('.')
-        execute "normal! \<esc>"
-        call setpos('.', pos)
-        call md#line#toggleChecklistItem('.')
-        call md#checklist#refresh(firstLine, lastLine)
-      endif
-    finally
-      call setpos('.', pos)
-      call setpos("'<", mark_a)
-      call setpos("'>", mark_b)
-    endtry
-  endfunction
-endif

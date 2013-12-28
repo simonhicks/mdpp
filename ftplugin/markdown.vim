@@ -1,9 +1,6 @@
 " TODO
-" - ftdetect for mdp filetype
-" - syntax for mdp filetype
-" - autoindent for mdp filetype
-" - change all references to md -> mdpp
-" - option to switch off interactive features (todo, checklists, tables, shell)
+" - syntax for md filetype
+" - option to switch off interactive features (todo, tables, shell)
 " - option to switch off directories features (index, :Notes, etc.)
 
 " code folding
@@ -57,10 +54,3 @@ if g:with_todo_features
   nnoremap <buffer> [d :call md#core#decTodo()<CR>
   nnoremap <buffer> ]d :call md#core#incTodo()<CR>
 endif
-
-if g:with_checklist_features
-  call md#checklist#init()
-
-  nnoremap <buffer> g<CR> :silent call md#core#toggleChecklist()<CR>
-endif
-

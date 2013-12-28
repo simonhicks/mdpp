@@ -136,16 +136,3 @@ if g:with_todo_features
     endif
   endfunction
 endif
-
-if g:with_checklist_features
-  call md#checklist#init()
-
-  function! md#line#isChecklistItem(lnum)
-    return match(getline(a:lnum), "^ *\\[\\(X\\|/\\| \\)\\] ") != -1
-  endfunction
-
-  function! md#line#toggleChecklistItem(lnum)
-    let line = getline(a:lnum)
-    call setline(a:lnum, md#str#toggleChecklist(line))
-  endfunction
-endif
