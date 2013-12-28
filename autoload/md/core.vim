@@ -178,7 +178,7 @@ if g:with_todo_features
     let pos = getpos('.')
     try
       call md#move#ensureHeading()
-      call md#line#incTodoState('.')
+      call md#todo#incTodoState('.')
     finally
       call setpos('.', pos)
     endtry
@@ -188,7 +188,7 @@ if g:with_todo_features
     let pos = getpos('.')
     try
       call md#move#ensureHeading()
-      call md#line#decTodoState('.')
+      call md#todo#decTodoState('.')
     finally
       call setpos('.', pos)
     endtry

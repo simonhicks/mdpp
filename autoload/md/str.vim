@@ -20,7 +20,7 @@ if g:with_todo_features
   function! md#str#getTodoState(str)
     let str = md#str#headingContent(a:str)
     let word = matchstr(str, "[^[:space:]]*")
-    return index(g:mdpp_todo_states, word) != -1 ? word : ""
+    return index(g:mdpp_todo_all_states, word) != -1 ? word : ""
   endfunction
 
   function! md#str#setTodoState(str, state)
