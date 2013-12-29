@@ -11,8 +11,8 @@ if exists("g:mdpp_path") && len(g:mdpp_path)
     let g:mdpp_default_create_dir = g:mdpp_path[0]
   endif
 
-  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete Motes call md#lookup#notesCommand(<q-bang>, '', <f-args>)
-  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete HMotes call md#lookup#notesCommand(<q-bang>, 'split', <f-args>)
-  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete VMotes call md#lookup#notesCommand(<q-bang>, 'vert', <f-args>)
-  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete TMotes call md#lookup#notesCommand(<q-bang>, 'tab', <f-args>)
+  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete Notes call md#lookup#notesCommand(<q-bang>, '', <f-args>)
+  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete HNotes call md#lookup#notesCommand(<q-bang>, 'split', <f-args>)
+  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete VNotes call md#lookup#notesCommand(<q-bang>, 'vert', <f-args>)
+  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete TNotes call md#lookup#notesCommand(<q-bang>, 'tab', <f-args>)
 endif
