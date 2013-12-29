@@ -125,6 +125,7 @@ function! s:findAndOpen(splitType, str)
   else
     throw "Couldn't find notes file matching '" . str . "'"
   endif
+  return path
 endfunction
 
 " @arg splitType: where to open the file
@@ -132,14 +133,16 @@ endfunction
 " @arg str:       either <dirname>/<filename> or <filename>
 function! md#lookup#notesCommand(reset, splitType, ...)
   let str = a:0 ? a:1 : ''
+  let path = ''
   if len(str)
-    call s:findAndOpen(a:splitType, a:str)
+    let path = s:findAndOpen(a:splitType, str)
   elseif exists("g:mdpp_default_file")
-    call s:openFile(a:splitType, fnamemodify(g:mdpp_default_file, ":p"))
+    let path = fnamemodify(g:mdpp_default_file, ":p")
+    call s:openFile(a:splitType, path)
   else
     throw "Default file name not set. Define g:mdpp_default_file and try again."
   endif
-  if len(a:reset) || !exists("g:mdpp_default_file")
+  if len(path) && (len(a:reset) || !exists("g:mdpp_default_file"))
     let g:mdpp_default_file = path
   endif
 endfunction
@@ -157,12 +160,20 @@ function! s:directoryOptions(str)
   return opts
 endfunction
 
+function! s:completeMatchDir(dir)
+  for directory in g:mdpp_path
+    if fnamemodify(directory, ":t") ==# a:dir
+      return fnamemodify(directory, ":p")
+    endif
+  endfor
+  return ''
+endfunction
+
 function! s:autocompleteFileInPath(file, path)
   let opts = []
   for directory in a:path
     let directory = fnamemodify(directory, ":p")
     for fname in split(system("ls " . shellescape(directory)), "\n")
-      echom fname
       if match(fname, "^" . a:file) != -1 && match(fname, "\.md$") != -1
         call add(opts, fnamemodify(directory . fname, ":p"))
       end
@@ -172,11 +183,16 @@ function! s:autocompleteFileInPath(file, path)
 endfunction
 
 function! s:autocompletePair(dir, file)
-  let dirs = s:directoryOptions(a:dir)
-  if len(a:file)
-    return s:autocompleteFileInPath(a:file, dirs)
+  let compl = s:completeMatchDir(a:dir)
+  if len(compl) && !len(a:file)
+    return s:autocompleteFileInPath('', [compl])
   else
-    return dirs
+    let dirs = s:directoryOptions(a:dir)
+    if len(a:file)
+      return s:autocompleteFileInPath(a:file, dirs)
+    else
+      return dirs
+    endif
   endif
 endfunction
 
