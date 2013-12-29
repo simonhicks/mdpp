@@ -6,24 +6,90 @@ if exists("g:mdpp_path") && len(g:mdpp_path)
   if !exists("g:mdpp_create_if_not_found")
     let g:mdpp_create_if_not_found = 1
   endif
+
   if !exists("g:mdpp_default_create_dir")
     let g:mdpp_default_create_dir = g:mdpp_path[0]
   endif
 
-  function! s:resolveFile(name)
-    for directory in g:mdpp_path
-      let directory = fnamemodify(directory, ":p")
-      if isdirectory(directory)
-        let path = fnamemodify(directory . a:name . ".md", ":p")
-        if filereadable(path)
-          return path
-        endif
-      endif
-    endfor
-    if g:mdpp_create_if_not_found
-      return fnamemodify(g:mdpp_default_create_dir . "/" . a:name . ".md", ":p")
+  """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+  "
+  " look for a:file in a:dir. If found return the absolute path, otherwise
+  " return ''
+  "
+  """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+  function! s:resolveFileInDir(dir, name)
+    let path = fnamemodify(a:dir . a:name . ".md", ":p")
+    if filereadable(path)
+      return path
     else
       return ""
+    endif
+  endfunction
+
+  function! s:resolveFile(name)
+    for directory in g:mdpp_path
+      let dir = fnamemodify(directory, ":p")
+      let path = s:resolveFileInDir(dir, a:name)
+      if len(path)
+        return path
+      endif
+    endfor
+    return ""
+  endfunction
+
+  function! s:resolveDir(dir)
+    for directory in g:mdpp_path
+      if a:dir ==# fnamemodify(directory, ":t")
+        return fnamemodify(directory, ":p")
+      endif
+    endfor
+    return ''
+  endfunction
+
+  function! s:resolve(dir, name)
+    if len(a:dir)
+      let dir = s:resolveDir(a:dir)
+      if isdirectory(dir)
+        let path = s:resolveFileInDir(dir, a:name)
+      else
+        throw "Directory '" . a:dir . "' not found."
+      endif
+    else
+      let path = s:resolveFile(a:name)
+    endif
+    return path
+  endfunction
+
+  function! s:newFilePath(dir, name)
+    let path = ""
+    if g:mdpp_create_if_not_found
+      let dir = len(a:dir) ? a:dir : g:mdpp_default_create_dir
+      let path = fnamemodify(dir . "/" . a:name . ".md", ":p")
+    endif
+    return path
+  endfunction
+
+  function! s:parseString(str)
+    let parts = []
+    if match(a:str, "/") != -1
+      let parts = split(a:str, "/")
+    else
+      let parts = ['', a:str]
+    endif
+    return parts
+  endfunction
+
+  function! s:expandString(str)
+    let parts = s:parseString(a:str)
+    if len(parts) ==# 2
+      let path = s:resolve(parts[0], parts[1])
+      if len(path)
+        return path
+      else
+        return s:newFilePath(parts[0], parts[1])
+      endif
+    else
+      throw "Invalid file reference '" . a:str . "'"
     endif
   endfunction
 
@@ -66,11 +132,11 @@ if exists("g:mdpp_path") && len(g:mdpp_path)
 
   " @arg splitType: where to open the file
   " @arg reset:     should I set this file to be the default
-  " @arg name:      what's the name of the file
+  " @arg str:       either <dirname>/<filename> or <filename>
   function! s:notesCommand(reset, splitType, ...)
-    let name = a:0 ? a:1 : ''
-    if len(name)
-      let path = s:resolveFile(name)
+    let str = a:0 ? a:1 : ''
+    if len(str)
+      let path = s:expandString(str)
       if len(path)
         call s:openFile(a:splitType, path)
       else
