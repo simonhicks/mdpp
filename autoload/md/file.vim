@@ -60,6 +60,15 @@ function! s:parseMetaData(line)
   return meta
 endfunction
 
+function! s:ensureIdentifier(heading)
+  if !has_key(heading.meta, 'identifier')
+    " TODO NON TRIVIAL LOGIC HERE!!!
+    "      extract the auto-gen heading identifier... probably best to do it
+    "      in str and call out to it from here (and line)
+    " TODO add identifier to heading.meta['identifier']
+  endif
+endfunction
+
 function! s:parseHeading(line, nextLine)
   let obj = {}
   let level = s:parseLevel(a:line, a:nextLine)
@@ -67,6 +76,7 @@ function! s:parseHeading(line, nextLine)
     let content = md#str#headingContent(a:line)
     let meta = s:parseMetaData(a:line)
     let obj = {'level': level, 'content': content, 'children': [], 'meta': meta}
+    call s:ensureIdentifier(obj)
     if g:with_todo_features && len(obj) > 0
       call s:addTodoState(obj)
     endif
