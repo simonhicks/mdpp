@@ -47,7 +47,7 @@ function! s:newFilePath(dir, name)
   let path = ""
   if g:mdpp_create_if_not_found
     let dir = len(a:dir) ? a:dir : g:mdpp_default_create_dir
-    let path = fnamemodify(dir . "/" . a:name . ".md", ":p")
+    let path = fnamemodify(s:resolveDir(dir) . a:name . ".md", ":p")
   endif
   return path
 endfunction
