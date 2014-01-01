@@ -102,9 +102,15 @@ function! md#ui#newFromTree(name, spec, tree)
   return ui
 endfunction
 
+function! md#ui#showTree(name, spec, tree)
+  let ui = md#ui#newFromTree(a:name, a:spec, a:tree)
+  call md#ui#showVert(ui)
+  return ui
+endfunction
+
 " """ Sample using ui-spec
 " " TODO handle indentation here
-" let g:ui = md#ui#newFromTree("blah", 
+" let g:ui = md#ui#showTree("blah", 
 "       \ {'line': "a:branch['state'] . ': ' . a:branch['content']",
 "       \  'handler': '"echom \"" . a:branch["content"] . "\""'},
 "       \ [
