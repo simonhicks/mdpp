@@ -61,7 +61,7 @@ function! s:parseMetaData(line)
 endfunction
 
 function! s:ensureIdentifier(heading)
-  if !has_key(heading.meta, 'identifier')
+  if !has_key(a:heading.meta, 'identifier')
     " TODO NON TRIVIAL LOGIC HERE!!!
     "      extract the auto-gen heading identifier... probably best to do it
     "      in str and call out to it from here (and line)
@@ -75,7 +75,7 @@ function! s:parseHeading(line, nextLine)
   if level > 0
     let content = md#str#headingContent(a:line)
     let meta = s:parseMetaData(a:line)
-    let obj = {'level': level, 'content': content, 'children': [], 'meta': meta}
+    let obj = {'type': 'headaing', 'level': level, 'content': content, 'index': [], 'meta': meta}
     call s:ensureIdentifier(obj)
     if g:with_todo_features && len(obj) > 0
       call s:addTodoState(obj)
@@ -90,7 +90,7 @@ function! s:headings(file)
   let lnum = 0
   let max = len(lines) - 1
   while lnum <= max
-    let nextLine = (lnum < max) && (len(line) > 0) ? lines[lnum + 1] : ''
+    let nextLine = (lnum < max) && (len(lines) > 0) ? lines[lnum + 1] : ''
     let heading = s:parseHeading(lines[lnum], md#str#trim(nextLine))
     if len(heading)
       call add(headings, heading)
@@ -107,17 +107,56 @@ function! s:addBranch(structure, branch)
     if a:branch.level ==# currentLevel
       call add(a:structure, a:branch)
     else
-      call s:addBranch(lastNode.children, a:branch)
+      call s:addBranch(lastNode.index, a:branch)
     endif
   else
     call add(a:structure, a:branch)
   endif
 endfunction
 
-function! md#file#index(file)
+function! md#file#fileIndex(file)
   let structure = []
   for heading in s:headings(a:file)
     call s:addBranch(structure, heading)
   endfor
   return structure
 endfunction
+
+if exists("g:mdpp_path")
+  function! s:fileList(folderPath)
+    let files = globpath(a:folderPath, "*.md")
+    return split(files, "\n")
+  endfunction
+
+  function! s:createFileItem(filePath, eager)
+    let item = {'path': a:filePath, 'type': 'file'}
+    if a:eager
+      let item['index'] = md#file#fileIndex(a:filePath)
+    endif
+    return item
+  endfunction
+
+  function! md#file#folderIndex(folderPath, eager)
+    let folderIndex = []
+    for filePath in s:fileList(a:folderPath)
+      call add(folderIndex, s:createFileItem(filePath, a:eager))
+    endfor
+    return folderIndex
+  endfunction
+
+  function! s:createFolderItem(folderPath, eager)
+    let item = {'path': a:folderPath, 'type': 'folder'}
+    if a:eager
+      let item['index'] = md#file#folderIndex(a:folderPath, a:eager)
+    endif
+    return item
+  endfunction
+
+  function! md#file#fullIndex(eager)
+    let fullIndex = []
+    for folderPath in g:mdpp_path
+      call add(fullIndex, s:createFolderItem(folderPath, a:eager))
+    endfor
+    return fullIndex
+  endfunction
+endif

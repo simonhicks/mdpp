@@ -20,7 +20,7 @@ function! s:resolveFile(name)
   return ""
 endfunction
 
-function! s:resolveDir(dir)
+function! md#lookup#resolveDir(dir)
   for directory in g:mdpp_path
     if a:dir ==# fnamemodify(directory, ":t")
       return fnamemodify(directory, ":p")
@@ -31,7 +31,7 @@ endfunction
 
 function! s:resolve(dir, name)
   if len(a:dir)
-    let dir = s:resolveDir(a:dir)
+    let dir = md#lookup#resolveDir(a:dir)
     if isdirectory(dir)
       let path = s:resolveFileInDir(dir, a:name)
     else
@@ -47,7 +47,7 @@ function! s:newFilePath(dir, name)
   let path = ""
   if g:mdpp_create_if_not_found
     let dir = len(a:dir) ? a:dir : g:mdpp_default_create_dir
-    let path = fnamemodify(s:resolveDir(dir) . a:name . ".md", ":p")
+    let path = fnamemodify(md#lookup#resolveDir(dir) . a:name . ".md", ":p")
   endif
   return path
 endfunction

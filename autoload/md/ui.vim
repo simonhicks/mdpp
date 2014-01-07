@@ -1,4 +1,4 @@
-function! s:getNumber(name)
+function! s:number(name)
   let patt =  '_\(\d\d*\)$'
   if match(a:name, patt) != -1
     return matchlist(a:name, patt)[1]
@@ -10,7 +10,7 @@ endfunction
 function! s:safeName(name)
   let safe = a:name
   while bufnr(safe) != -1
-    let fnum = s:getNumber(safe)
+    let fnum = s:number(safe)
     if fnum
       let safe = substitute(safe, "_" . fnum . "$", "_" . (fnum + 1), "")
     else
@@ -20,134 +20,140 @@ function! s:safeName(name)
   return safe
 endfunction
 
-function! s:newBuffer(name)
-  let bname = s:safeName(a:name)
-  execute "badd " . bname
-  return bufnr(bname)
-endfunction
-
-function! s:store(ui)
-  if !exists("g:mdpp_ui_store")
-    let g:mdpp_ui_store = {}
-  endif
-  let g:mdpp_ui_store[a:ui['name']] = a:ui
-endfunction
-
-function! s:handle(name)
-  execute g:mdpp_ui_store[a:name].handlers[line('.') - 1]
-endfunction
-
-function! md#ui#new(name)
-  let ui = {}
-  let ui['name'] = s:safeName(a:name)
-  let ui['lines'] = []
-  let ui['handlers'] = []
-  let ui['buffer'] = s:newBuffer(a:name)
-  let ui['onshow'] = "setlocal buftype=nofile\n"
-        \          . "setlocal hidden\n"
-        \          . "setlocal nomodifiable\n"
-        \          . "setlocal readonly\n"
-        \          . "setlocal cursorline\n"
-        \          . "nnoremap <buffer> <CR> :call \<SID>handle('" . ui['name'] . "')<CR>\n"
-  call s:store(ui)
-  return ui
-endfunction
-
-function! s:setBufferContent(content)
-  let stored = @a
+function! md#ui#setBufferContent(content)
   setlocal modifiable
   setlocal noreadonly
-  let @a = a:content
-  execute 'normal! ggVG"ap'
-  let @a = stored
+  execute 'normal! ggdG'
+  call append(1, split(a:content, "\n"))
+  execute "normal! dd"
   setlocal readonly
   setlocal nomodifiable
 endfunction
 
-function! md#ui#showVert(ui)
-  execute "silent vert leftabove sbuffer " . a:ui['buffer']
-  if len(a:ui['onshow'])
-    execute a:ui['onshow']
-    let a:ui['onshow'] = ''
-  endif
-  call s:setBufferContent(join(a:ui['lines'], "\n"))
+function! md#ui#initBuffer(name)
+  let name = s:safeName(a:name)
+  execute "silent vert leftabove split " . name
+  setlocal buftype=nofile
+  setlocal hidden
+  setlocal nomodifiable
+  setlocal readonly
+  setlocal cursorline
+  return name
 endfunction
 
-function! s:addLine(ui, line)
-  call add(a:ui.lines, a:line)
-endfunction
+if exists("g:mdpp_path")
+  function! s:flattenIndexList(tree)
+    let items = []
+    for item in a:tree
+      call add(items, item)
+      if has_key(item, 'index') && len(item['index']) !=# 0
+        for nested in md#ui#flattenIndexList(item['index'])
+          call add(items, nested)
+        endfor
+      endif
+    endfor
+    return items
+  endfunction
 
-function! s:addHandler(ui, handler)
-  call add(a:ui.handlers, a:handler)
-endfunction
+  function! s:nthItem(tree, num)
+    return s:flattenIndexList(a:tree)[a:num]
+  endfunction
 
-" spec should be an object containing exprs using 'a:branch' to generate the
-" ui text and behaviour
-function! s:addBranch(ui, spec, branch)
-  execute "let line = " . a:spec.line
-  execute "let handler = " . a:spec.handler
-  call s:addLine(a:ui, line)
-  call s:addHandler(a:ui, handler)
-  " FIXME add children
-  for child in a:branch['children']
-    call s:addBranch(a:ui, a:spec, child)
-  endfor
-endfunction
+  function! md#ui#realize(tree, num)
+    let item = s:nthItem(a:tree, a:num)
+    let p = item.path
+    if item.type ==# 'file'
+      let item['index'] = md#file#fileIndex(p)
+    elseif item.type ==# 'folder'
+      let item['index'] = md#file#folderIndex(p, 0)
+    endif
+  endfunction
 
-function! md#ui#newFromTree(name, spec, tree)
-  let ui = md#ui#new(a:name)
-  for branch in a:tree
-    call s:addBranch(ui, a:spec, branch)
-  endfor
-  return ui
-endfunction
+  function! md#ui#foldItem(tree, num)
+    let item = s:nthItem(a:tree, a:num)
+    if has_key(item, 'folded')
+      let item['folded'] = item['index']
+      call remove(item, 'index')
+    endif
+  endfunction
 
-function! md#ui#showTree(name, spec, tree)
-  let ui = md#ui#newFromTree(a:name, a:spec, a:tree)
-  call md#ui#showVert(ui)
-  return ui
-endfunction
+  function! md#ui#unfoldItem(tree, num)
+    let item = s:nthItem(a:tree, a:num)
+    if has_key(item, 'folded')
+      let item['index'] = item['folded']
+      call remove(item, 'folded')
+    elseif !has_key(item, 'index')
+      call md#ui#realize(a:tree, a:num)
+    endif
+  endfunction
 
-" """ Sample using ui-spec
-" " TODO handle indentation here
-" let g:ui = md#ui#showTree("blah", 
-"       \ {'line': "a:branch['state'] . ': ' . a:branch['content']",
-"       \  'handler': '"echom \"" . a:branch["content"] . "\""'},
-"       \ [
-"       \   {'content' : 'foo', 'state' : 'TODO', 'children' : [{'content': 'blah blah blah', 'state': 'TODO', 'children': []}]},
-"       \   {'content' : 'bar', 'state' : 'DONE', 'children' : []}
-"       \ ])
+  function! s:stringifyFolder(item)
+    let content = fnamemodify(a:item.path, ":t") . "/"
+    if has_key(a:item, 'index')
+      return '- ' . content
+    else
+      return '+ ' . content
+    endif
+  endfunction
 
-" """ Random playgroud code
-" function! Indent(num)
-"   let str = ''
-"   let counter = a:num
-"   while counter
-"     let str = str . ' '
-"     let counter = counter - 1
-"   endwhile
-"   return str
-" endfunction
+  function! s:stringifyFile(item)
+    let content = substitute(fnamemodify(a:item.path, ":t"), '.md$', '', '')
+    if has_key(a:item, 'index')
+      return '- ' . content
+    else
+      return '+ ' . content
+    endif
+  endfunction
 
-" function! s:string(indent, tree)
-"   let output = ''
-"   for node in a:tree
-"     let output = output . s:indent(a:indent) . node['content'] . "\n"
-"     if has_key(node, 'children') && len(node['children'])
-"       let output = output . s:string(a:indent + 2, node['children'])
-"     endif
-"   endfor
-"   return output
-" endfunction
+  function! s:stringifyHeading(item)
+    let content = a:item['content']
+    if g:with_todo_features && has_key(a:item, 'state')
+      let content = a:item['state'] . ': ' . content
+    endif
+    if has_key(a:item, 'index')
+      return '- ' . content
+    elseif has_key(a:item, 'folded')
+      return '+ ' . content
+    else
+      return '  ' . content
+    endif
+  endfunction
 
-" let g:test_tree = [{'content': 'this is an item', 'children': [{'content': 'this is a child'}, {'content': 'another child', 'children': [{'content' : 'with its own child'}]}]}, {'content': 'this is the second item'}]
+  function! s:stringifyItem(item, indent)
+    let type = a:item.type
+    let str = md#str#indent('', a:indent)
+    if type ==# 'heading'
+      let str = str . s:stringifyHeading(a:item)
+    elseif type ==# 'file'
+      let str = str . s:stringifyFile(a:item)
+    elseif type ==# 'folder'
+      let str = str . s:stringifyFolder(a:item)
+    endif
+    if has_key(a:item, 'index')
+      for nested in a:item['index']
+        let str = str . "\n" . s:stringifyItem(nested, a:indent + 2)
+      endfor
+    endif
+    return str
+  endfunction
 
-" " testing the window stuff
-" function! RunTest()
-"   let g:ui = md#ui#new("foo")
-"   call add(g:ui['lines'], "hello world!")
-"   call add(g:ui['lines'], "goodbye world!")
-"   call add(g:ui['handlers'], "echom 'hello world!'")
-"   call add(g:ui['handlers'], "echom 'goodbye world!'")
-"   call md#ui#showVert(g:ui)
-" endfunction
+  function! md#ui#stringify(list)
+    let str = ''
+    for item in a:list
+      let str = str . s:stringifyItem(item, 0) . "\n"
+    endfor
+    return str
+  endfunction
+
+  function! TestCode()
+    let ind = md#file#fullIndex(0)
+    call md#ui#unfoldItem(ind, 0)
+    "" FIXME This should unfold the first file, but it only adds a bunch of
+    ""       empty lines
+    " call md#ui#unfoldItem(ind, 1)
+    echo md#ui#stringify(ind)
+  endfunction
+
+  " function! md#ui#todoTree()
+  " endfunction
+endif

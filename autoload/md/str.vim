@@ -14,6 +14,17 @@ function! md#str#headingPrefix(heading)
   return matchstr(a:heading, "^#* *")
 endfunction
 
+" assumes a:str is only one line
+function! md#str#indent(str, n)
+  let counter = a:n
+  let str = a:str
+  while counter
+    let str = ' ' . str
+    let counter = counter - 1
+  endwhile
+  return str
+endfunction
+
 if g:with_todo_features
   call md#todo#init()
 
