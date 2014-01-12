@@ -75,7 +75,7 @@ function! s:parseHeading(line, nextLine)
   if level > 0
     let content = md#str#headingContent(a:line)
     let meta = s:parseMetaData(a:line)
-    let obj = {'type': 'headaing', 'level': level, 'content': content, 'index': [], 'meta': meta}
+    let obj = {'type': 'heading', 'level': level, 'content': content, 'index': [], 'meta': meta}
     call s:ensureIdentifier(obj)
     if g:with_todo_features && len(obj) > 0
       call s:addTodoState(obj)
@@ -92,6 +92,7 @@ function! s:headings(file)
   while lnum <= max
     let nextLine = (lnum < max) && (len(lines) > 0) ? lines[lnum + 1] : ''
     let heading = s:parseHeading(lines[lnum], md#str#trim(nextLine))
+    " let heading['location'] = a:file " FIXME change this to be <folder>/<file>
     if len(heading)
       call add(headings, heading)
     endif
@@ -115,6 +116,7 @@ function! s:addBranch(structure, branch)
 endfunction
 
 function! md#file#fileIndex(file)
+  let fullIndex = !(a:0 && a:1)
   let structure = []
   for heading in s:headings(a:file)
     call s:addBranch(structure, heading)

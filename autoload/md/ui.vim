@@ -34,7 +34,7 @@ function! md#ui#initBuffer(name)
   let name = s:safeName(a:name)
   execute "silent vert leftabove split " . name
   setlocal buftype=nofile
-  setlocal hidden
+  setlocal bufhidden=wipe
   setlocal nomodifiable
   setlocal readonly
   setlocal cursorline
@@ -47,7 +47,7 @@ if exists("g:mdpp_path")
     for item in a:tree
       call add(items, item)
       if has_key(item, 'index') && len(item['index']) !=# 0
-        for nested in md#ui#flattenIndexList(item['index'])
+        for nested in s:flattenIndexList(item['index'])
           call add(items, nested)
         endfor
       endif
@@ -71,7 +71,7 @@ if exists("g:mdpp_path")
 
   function! md#ui#foldItem(tree, num)
     let item = s:nthItem(a:tree, a:num)
-    if has_key(item, 'folded')
+    if has_key(item, 'index')
       let item['folded'] = item['index']
       call remove(item, 'index')
     endif
@@ -85,6 +85,19 @@ if exists("g:mdpp_path")
     elseif !has_key(item, 'index')
       call md#ui#realize(a:tree, a:num)
     endif
+  endfunction
+
+  function! md#ui#toggleFold()
+    let pos = getpos('.')
+    let num = line('.') - 1
+    let item = s:nthItem(b:index, num)
+    if has_key(item, 'index')
+      call md#ui#foldItem(b:index, num)
+    else
+      call md#ui#unfoldItem(b:index, num)
+    endif
+    call md#ui#setBufferContent(md#ui#stringify(b:index))
+    call setpos('.', pos)
   endfunction
 
   function! s:stringifyFolder(item)
@@ -107,15 +120,15 @@ if exists("g:mdpp_path")
 
   function! s:stringifyHeading(item)
     let content = a:item['content']
-    if g:with_todo_features && has_key(a:item, 'state')
-      let content = a:item['state'] . ': ' . content
+    if g:with_todo_features && has_key(a:item, 'state') && len(a:item['state']) > 0
+      let content = content . ' [' . a:item['state'] . ']'
     endif
-    if has_key(a:item, 'index')
+    if has_key(a:item, 'index') && len(a:item['index']) > 0
       return '- ' . content
-    elseif has_key(a:item, 'folded')
+    elseif has_key(a:item, 'folded') && len(a:item['folded']) > 0
       return '+ ' . content
     else
-      return '  ' . content
+      return '- ' . content
     endif
   endfunction
 
@@ -148,12 +161,17 @@ if exists("g:mdpp_path")
   function! TestCode()
     let ind = md#file#fullIndex(0)
     call md#ui#unfoldItem(ind, 0)
-    "" FIXME This should unfold the first file, but it only adds a bunch of
-    ""       empty lines
-    " call md#ui#unfoldItem(ind, 1)
+    call md#ui#unfoldItem(ind, 2)
     echo md#ui#stringify(ind)
   endfunction
 
-  " function! md#ui#todoTree()
-  " endfunction
+  function! md#ui#indexView()
+    let bname = md#ui#initBuffer('index')
+    let bnum = bufnr(bname)
+    let b:index = md#file#fullIndex(0)
+    call md#ui#setBufferContent(md#ui#stringify(b:index))
+    nnoremap <buffer> <CR> :call md#ui#toggleFold()<CR>
+    " TODO g{o,t,v,s} -> :{,T,V,S}Notes <selected-file>
+    " TODO G{o,t,v,s} -> :{,T,V,S}Notes! <selected-file>
+  endfunction
 endif
