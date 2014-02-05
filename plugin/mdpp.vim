@@ -7,6 +7,8 @@ if exists("g:mdpp_path") && len(g:mdpp_path)
     let g:mdpp_create_if_not_found = 1
   endif
 
+  let g:mdpp_path = map(g:mdpp_path, 'fnamemodify(v:val, ":p")')
+
   if !exists("g:mdpp_default_create_dir")
     let g:mdpp_default_create_dir = g:mdpp_path[0]
   endif

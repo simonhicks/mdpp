@@ -1,4 +1,4 @@
-function! s:fileLines(file)
+function! md#file#lines(file)
   let lines = []
   if filereadable(a:file)
     let lines = readfile(a:file)
@@ -85,14 +85,14 @@ function! s:parseHeading(line, nextLine)
 endfunction
 
 function! s:headings(file)
-  let lines = s:fileLines(a:file)
+  let lines = md#file#lines(a:file)
   let headings = []
   let lnum = 0
   let max = len(lines) - 1
   while lnum <= max
     let nextLine = (lnum < max) && (len(lines) > 0) ? lines[lnum + 1] : ''
     let heading = s:parseHeading(lines[lnum], md#str#trim(nextLine))
-    " let heading['location'] = a:file " FIXME change this to be <folder>/<file>
+    let heading['location'] = a:file
     if len(heading)
       call add(headings, heading)
     endif

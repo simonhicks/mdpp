@@ -224,14 +224,44 @@ function! s:autocompleteOptions(str)
   endif
 endfunction
 
+function! s:isOnPath(file)
+  let dir = fnamemodify(a:file, ':h')
+  let fullDir = fnamemodify(dir, ':p')
+  for dir in g:mdpp_path
+    if resolve(dir) ==# fullDir
+      return 1
+    endif
+  endfor
+endfunction
+
+" given a full filepath, return the <folder> in mdpp_path for that file
+function! s:getFolder(path)
+  if s:isOnPath(a:path)
+    let dir = fnamemodify(a:path, ":h")
+    let folder = fnamemodify(dir, ":t")
+    return folder
+  else
+    throw fnamemodify(a:path, ":p") . " is not on the mdpp path!"
+  endif
+endfunction
+
+" given a full filepath, return the <filename> for that file
+function! s:getFilename(path)
+  return substitute(fnamemodify(a:path, ":t"), "\.md$", "", "")
+endfunction
+
 function! md#lookup#autocomplete(argLead, cmdLine, cursorPos)
   let fullPaths = s:autocompleteOptions(a:argLead)
   let opts = []
   for path in fullPaths
-    let fname = substitute(fnamemodify(path, ":t"), "\.md$", "", "")
-    let dir = fnamemodify(path, ":h")
-    let dirname = fnamemodify(dir, ":t")
-    call add(opts, dirname . "/" . fname)
+    let folder = s:getFolder(path)
+    let fname = s:getFilename(path)
+    call add(opts, folder . "/" . fname)
   endfor
   return opts
+endfunction
+
+" given a full filepath, return the <folder>/<filename> for that file
+function! md#lookup#reverse(path)
+  return s:getFolder(a:path) . "/" . s:getFilename(a:path)
 endfunction

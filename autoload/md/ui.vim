@@ -171,7 +171,7 @@ if exists("g:mdpp_path")
     let b:index = md#file#fullIndex(0)
     call md#ui#setBufferContent(md#ui#stringify(b:index))
     nnoremap <buffer> <CR> :call md#ui#toggleFold()<CR>
-    " TODO g{o,t,v,s} -> :{,T,V,S}Notes <selected-file>
-    " TODO G{o,t,v,s} -> :{,T,V,S}Notes! <selected-file>
+    " TODO g{o,t,v,s} -> :{,T,V,S}Notes <selected-file> (and to the line if we're on a heading)
+    " TODO G{o,t,v,s} -> :{,T,V,S}Notes! <selected-file> (and to the line if we're on a heading)
   endfunction
 endif
