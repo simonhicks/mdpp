@@ -38,6 +38,7 @@ function! md#ui#initBuffer(name)
   setlocal nomodifiable
   setlocal readonly
   setlocal cursorline
+  let b:mdpp_ui_buffer = 1
   return name
 endfunction
 
@@ -87,10 +88,15 @@ if exists("g:mdpp_path")
     endif
   endfunction
 
+  function! s:currentItem()
+    let num = line('.') - 1
+    return s:nthItem(b:index, num)
+  endfunction
+
   function! md#ui#toggleFold()
     let pos = getpos('.')
     let num = line('.') - 1
-    let item = s:nthItem(b:index, num)
+    let item = s:currentItem()
     if has_key(item, 'index')
       call md#ui#foldItem(b:index, num)
     else
@@ -158,20 +164,50 @@ if exists("g:mdpp_path")
     return str
   endfunction
 
-  function! TestCode()
-    let ind = md#file#fullIndex(0)
-    call md#ui#unfoldItem(ind, 0)
-    call md#ui#unfoldItem(ind, 2)
-    echo md#ui#stringify(ind)
+  function! s:goTo(type, file, ident)
+    if len(a:targetFile)
+      call md#move#toWin(g:mdpp_last_window)
+      execute a:type . "Notes " . a:targetFile
+    endif
+    " TODO go to appropriate ident
   endfunction
 
+  function! md#ui#open(...)
+    let type = a:0 ? a:1 : ''
+    let item = s:currentItem()
+    let targetFile = ''
+    let targetIdent = ''
+    if item.type ==# 'heading'
+      let targetFile = item.location
+      " let targetIdent = ... TODO
+    elseif item.type ==# 'file'
+      let targetFile = md#lookup#reverse(item.path)
+    endif
+    call s:goTo(type, targetFile, targetIdent)
+  endfunction
+
+  " FIXME this should accept either a folder, or a file identifier
+  " TODO there should be an :Index ... command for opening this
   function! md#ui#indexView()
     let bname = md#ui#initBuffer('index')
     let bnum = bufnr(bname)
     let b:index = md#file#fullIndex(0)
     call md#ui#setBufferContent(md#ui#stringify(b:index))
     nnoremap <buffer> <CR> :call md#ui#toggleFold()<CR>
-    " TODO g{o,t,v,s} -> :{,T,V,S}Notes <selected-file> (and to the line if we're on a heading)
-    " TODO G{o,t,v,s} -> :{,T,V,S}Notes! <selected-file> (and to the line if we're on a heading)
+    nnoremap <buffer> o :call md#ui#open()<CR>
+    nnoremap <buffer> v :call md#ui#open('V')<CR>
+    nnoremap <buffer> t :call md#ui#open('T')<CR>
+    nnoremap <buffer> s :call md#ui#open('H')<CR>
+    " TODO useful movement mappings (like (, ), [[, ]], etc.)
   endfunction
+
+  function! md#ui#updateLastWindow()
+    if !exists("b:mdpp_ui_buffer")
+      let g:mdpp_last_window = winnr()
+    endif
+  endfunction
+
+  " keep track of the last window we were in, so we know where to open files
+  " from the ui windows
+  au! WinLeave * call md#ui#updateLastWindow()
 endif

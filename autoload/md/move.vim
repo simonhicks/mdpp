@@ -103,3 +103,11 @@ endfunction
 function! md#move#toLine(lnum)
   execute "normal! " . md#line#num(a:lnum) . "gg"
 endfunction
+
+function! md#move#toWin(wnum)
+  let start = winnr()
+  wincmd w
+  while ((winnr() != a:wnum) && (winnr() != start))
+    wincmd w
+  endwhile
+endfunction

@@ -151,7 +151,7 @@ if exists("g:mdpp_path")
   endfunction
 
   function! s:createFolderItem(folderPath, eager)
-    let item = {'path': a:folderPath, 'type': 'folder'}
+    let item = {'path': substitute(a:folderPath, '/$', "", ""), 'type': 'folder'}
     if a:eager
       let item['index'] = md#file#folderIndex(a:folderPath, a:eager)
     endif
