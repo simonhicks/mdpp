@@ -66,6 +66,15 @@ function! s:parseString(str)
   return parts
 endfunction
 
+function! md#lookup#resolveFilter(filter)
+  let parts = split(a:filter, "/")
+  if len(parts) ==# 2
+    return s:resolve(parts[0], parts[1])
+  elseif len(parts) ==# 1
+    return md#lookup#resolveDir(parts[0])
+  endif
+endfunction
+
 function! s:expandString(str)
   let parts = s:parseString(a:str)
   if len(parts) ==# 2

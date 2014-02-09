@@ -119,13 +119,28 @@ function! s:addBranch(structure, branch)
   endif
 endfunction
 
-function! md#file#fileIndex(file)
-  let fullIndex = !(a:0 && a:1)
+function! md#file#fileIndex(file, indexType)
+  if a:indexType ==# 'headings'
+    return s:fileHeadingIndex(a:file)
+  elseif a:indexType ==# 'todos'
+    return s:fileTodoIndex(a:file)
+  endif
+endfunction
+
+function! s:fileHeadingIndex(file)
   let structure = []
   for heading in s:headings(a:file)
     call s:addBranch(structure, heading)
   endfor
   return structure
+endfunction
+
+function! s:fileTodoIndex(file)
+  let items = []
+  for todo in s:todos(a:file)
+    call add(items, todo)
+  endfor
+  return items
 endfunction
 
 if exists("g:mdpp_path")
@@ -134,35 +149,50 @@ if exists("g:mdpp_path")
     return split(files, "\n")
   endfunction
 
-  function! s:createFileItem(filePath, eager)
-    let item = {'path': a:filePath, 'type': 'file'}
+  function! s:createFileItem(filePath, eager, indexType)
+    let item = {'path': a:filePath, 'type': 'file', 'indexType': a:indexType}
     if a:eager
-      let item['index'] = md#file#fileIndex(a:filePath)
+      let item['index'] = md#file#fileIndex(a:filePath, a:indexType)
     endif
     return item
   endfunction
 
-  function! md#file#folderIndex(folderPath, eager)
+  function! md#file#folderIndex(folderPath, eager, indexType)
     let folderIndex = []
     for filePath in s:fileList(a:folderPath)
-      call add(folderIndex, s:createFileItem(filePath, a:eager))
+      call add(folderIndex, s:createFileItem(filePath, a:eager, a:indexType))
     endfor
     return folderIndex
   endfunction
 
-  function! s:createFolderItem(folderPath, eager)
-    let item = {'path': substitute(a:folderPath, '/$', "", ""), 'type': 'folder'}
+  function! s:createFolderItem(folderPath, eager, indexType)
+    let item = {'path': substitute(a:folderPath, '/$', "", ""), 'type': 'folder', 'indexType': a:indexType}
     if a:eager
-      let item['index'] = md#file#folderIndex(a:folderPath, a:eager)
+      let item['index'] = md#file#folderIndex(a:folderPath, a:eager, a:indexType)
     endif
     return item
   endfunction
 
-  function! md#file#fullIndex(eager)
+  function! s:allNotesIndex(eager, indexType)
     let fullIndex = []
     for folderPath in g:mdpp_path
-      call add(fullIndex, s:createFolderItem(folderPath, a:eager))
+      call add(fullIndex, s:createFolderItem(folderPath, a:eager, a:indexType))
     endfor
     return fullIndex
+  endfunction
+
+  function! md#file#index(filter, indexType)
+    if len(a:filter)
+      let path = md#lookup#resolveFilter(a:filter)
+      if filereadable(path)
+        return md#file#fileIndex(path, a:indexType)
+      elseif isdirectory(path)
+        return md#file#folderIndex(path, 0, a:indexType)
+      else
+        echom 'Invalid filter string: ' .  a:filter
+      endif
+    else
+      return s:allNotesIndex(0, a:indexType)
+    endif
   endfunction
 endif

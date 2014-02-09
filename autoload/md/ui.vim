@@ -1,3 +1,7 @@
+if !exists("g:mdpp_sidebar_width")
+  let g:mdpp_sidebar_width = 40
+endif
+
 function! s:number(name)
   let patt =  '_\(\d\d*\)$'
   if match(a:name, patt) != -1
@@ -32,12 +36,16 @@ endfunction
 
 function! md#ui#initBuffer(name)
   let name = s:safeName(a:name)
-  execute "silent vert leftabove split " . name
+  execute "vsplit " . name
+  execute "normal! H"
+  execute "vertical resize " . g:mdpp_sidebar_width
   setlocal buftype=nofile
   setlocal bufhidden=wipe
   setlocal nomodifiable
   setlocal readonly
   setlocal cursorline
+  setlocal nowrap
+  setlocal nonumber
   let b:mdpp_ui_buffer = 1
   return name
 endfunction
@@ -64,9 +72,9 @@ if exists("g:mdpp_path")
     let item = s:nthItem(a:tree, a:num)
     let p = item.path
     if item.type ==# 'file'
-      let item['index'] = md#file#fileIndex(p)
+      let item['index'] = md#file#fileIndex(p, item.indexType)
     elseif item.type ==# 'folder'
-      let item['index'] = md#file#folderIndex(p, 0)
+      let item['index'] = md#file#folderIndex(p, 0, item.indexType)
     endif
   endfunction
 
@@ -165,9 +173,9 @@ if exists("g:mdpp_path")
   endfunction
 
   function! s:goTo(type, file, ident)
-    if len(a:targetFile)
+    if len(a:file)
       call md#move#toWin(g:mdpp_last_window)
-      execute a:type . "Notes " . a:targetFile
+      execute a:type . "Notes " . a:file
     endif
     " TODO go to appropriate ident
   endfunction
@@ -186,12 +194,10 @@ if exists("g:mdpp_path")
     call s:goTo(type, targetFile, targetIdent)
   endfunction
 
-  " FIXME this should accept either a folder, or a file identifier
-  " TODO there should be an :Index ... command for opening this
-  function! md#ui#indexView()
-    let bname = md#ui#initBuffer('index')
+  function! s:indexView(filter, indexType)
+    let bname = md#ui#initBuffer(a:indexType)
     let bnum = bufnr(bname)
-    let b:index = md#file#fullIndex(0)
+    let b:index = md#file#index(a:filter, a:indexType)
     call md#ui#setBufferContent(md#ui#stringify(b:index))
     nnoremap <buffer> <CR> :call md#ui#toggleFold()<CR>
     nnoremap <buffer> o :call md#ui#open()<CR>
@@ -200,6 +206,18 @@ if exists("g:mdpp_path")
     nnoremap <buffer> s :call md#ui#open('H')<CR>
     " TODO useful movement mappings (like (, ), [[, ]], etc.)
   endfunction
+
+  " TODO there should be a :TodoIndex ... command for opening this
+  function! md#ui#todoIndexView(filter)
+    call s:indexView(a:filter, 'todos')
+  endfunction
+
+  " TODO there should be an :Index ... command for opening this
+  function! md#ui#fullIndexView(filter)
+    call s:indexView(a:filter, 'headings')
+  endfunction
+
+  " TODO function! todoListView(filterString) - filterString = [<folder>/[<file>]]
 
   function! md#ui#updateLastWindow()
     if !exists("b:mdpp_ui_buffer")
