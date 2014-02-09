@@ -124,6 +124,8 @@ function! md#file#fileIndex(file, indexType)
     return s:fileHeadingIndex(a:file)
   elseif a:indexType ==# 'todos'
     return s:fileTodoIndex(a:file)
+  else
+    throw "Invalid index type '" . a:indexType . "'"
   endif
 endfunction
 
@@ -181,18 +183,18 @@ if exists("g:mdpp_path")
     return fullIndex
   endfunction
 
-  function! md#file#index(filter, indexType)
+  function! md#file#index(filter, eager, indexType)
     if len(a:filter)
       let path = md#lookup#resolveFilter(a:filter)
       if filereadable(path)
         return md#file#fileIndex(path, a:indexType)
       elseif isdirectory(path)
-        return md#file#folderIndex(path, 0, a:indexType)
+        return md#file#folderIndex(path, a:eager, a:indexType)
       else
         echom 'Invalid filter string: ' .  a:filter
       endif
     else
-      return s:allNotesIndex(0, a:indexType)
+      return s:allNotesIndex(a:eager, a:indexType)
     endif
   endfunction
 endif

@@ -24,6 +24,7 @@ function! s:safeName(name)
   return safe
 endfunction
 
+" TODO add default text to top of screen (title, instructions, etc.)
 function! md#ui#setBufferContent(content)
   setlocal modifiable
   setlocal noreadonly
@@ -34,6 +35,7 @@ function! md#ui#setBufferContent(content)
   setlocal nomodifiable
 endfunction
 
+" TODO add option for colorscheme
 function! md#ui#initBuffer(name)
   let name = s:safeName(a:name)
   execute "vsplit " . name
@@ -194,34 +196,121 @@ if exists("g:mdpp_path")
     call s:goTo(type, targetFile, targetIdent)
   endfunction
 
+  function! md#ui#openAndQuit(...)
+    let bnum = bufnr("%")
+    call md#ui#open(a:0 ? a:1 : '')
+    execute "bw " . bnum
+  endfunction
+
+  function! md#ui#refreshIndexBuffer(...)
+    let filter = a:0 ? a:1 : b:mdpp_ui_filter
+    let indexType = a:0 ? a:2 : b:mdpp_index_buffer_type
+    let b:index = md#file#index(filter, 0, indexType)
+    call md#ui#setBufferContent(md#ui#stringify(b:index))
+  endfunction
+
+  function! md#ui#updateUiFilter(onUpdate, resetDefault)
+    let b:mdpp_ui_filter = input("New Filter: ", b:mdpp_ui_filter, "customlist,md#lookup#autocomplete")
+    execute "call " . a:onUpdate . "()"
+    if resetDefault
+      let g:mdpp_default_ui_filter = filter
+    endif
+  endfunction
+
   function! s:indexView(filter, indexType)
     let bname = md#ui#initBuffer(a:indexType)
     let bnum = bufnr(bname)
-    let b:index = md#file#index(a:filter, a:indexType)
-    call md#ui#setBufferContent(md#ui#stringify(b:index))
+    call md#ui#refreshIndexBuffer(a:filter, a:indexType)
+    let b:mdpp_ui_filter = a:filter
+    let b:mdpp_index_buffer_type = a:indexType
     nnoremap <buffer> <CR> :call md#ui#toggleFold()<CR>
     nnoremap <buffer> o :call md#ui#open()<CR>
     nnoremap <buffer> v :call md#ui#open('V')<CR>
     nnoremap <buffer> t :call md#ui#open('T')<CR>
     nnoremap <buffer> s :call md#ui#open('H')<CR>
+    nnoremap <buffer> r :call md#ui#refreshIndexBuffer()<CR>
+    nnoremap <buffer> c :call md#ui#updateUiFilter("md#ui#refreshIndexBuffer", 0)<CR>
+    nnoremap <buffer> C :call md#ui#updateUiFilter("md#ui#refreshIndexBuffer", 1)<CR>
     " TODO useful movement mappings (like (, ), [[, ]], etc.)
+    " TODO ? mapping to show help
   endfunction
 
-  " TODO there should be a :TodoIndex ... command for opening this
-  function! md#ui#todoIndexView(filter)
-    call s:indexView(a:filter, 'todos')
+  function! s:stringifyTodo(item)
+    return "[".a:item.state."]: ".a:item.content." (".a:item.location.")"
   endfunction
 
-  " TODO there should be an :Index ... command for opening this
-  function! md#ui#fullIndexView(filter)
-    call s:indexView(a:filter, 'headings')
+  function! s:stringifyList(list)
+    let str = ''
+    for item in a:list
+      let str = str . s:stringifyTodo(item) . "\n"
+    endfor
+    return str
   endfunction
 
-  " TODO function! todoListView(filterString) - filterString = [<folder>/[<file>]]
+  function! md#ui#refreshTodoListBuffer(...)
+    let filter = a:0 ? a:1 : b:mdpp_ui_filter
+    let tree = md#file#index(filter, 1, 'todos')
+    let list = s:flattenIndexList(tree)
+    let b:index = filter(list, 'v:val.type ==# "heading"')
+    call md#ui#setBufferContent(s:stringifyList(b:index))
+  endfunction
+
+  function! s:todoListView(filter)
+    let bname = md#ui#initBuffer('todo-list')
+    let bnum = bufnr(bname)
+    call md#ui#refreshTodoListBuffer(a:filter)
+    let b:mdpp_ui_filter = a:filter
+    nnoremap <buffer> <CR> :call md#ui#openAndQuit()<CR>
+    nnoremap <buffer> o :call md#ui#open()<CR>
+    nnoremap <buffer> v :call md#ui#open('V')<CR>
+    nnoremap <buffer> t :call md#ui#open('T')<CR>
+    nnoremap <buffer> s :call md#ui#open('H')<CR>
+    nnoremap <buffer> r :call md#ui#refreshTodoListBuffer()<CR>
+    nnoremap <buffer> c :call md#ui#updateUiFilter("md#ui#refreshTodoListBuffer", 0)<CR>
+    nnoremap <buffer> C :call md#ui#updateUiFilter("md#ui#refreshTodoListBuffer", 1)<CR>
+    " TODO ? mapping to show help
+  endfunction
 
   function! md#ui#updateLastWindow()
     if !exists("b:mdpp_ui_buffer")
       let g:mdpp_last_window = winnr()
+    endif
+  endfunction
+
+  " @arg reset:     should I set this filter to be the default
+  " @arg indexType: all headings or just todos?
+  " @arg filter:    either <dirname>/<filename> or <dirname>
+  function! md#ui#indexCommand(reset, indexType, ...)
+    let str = a:0 ? a:1 : ''
+    let filter = ''
+    if len(str)
+      let filter = str
+    elseif exists("g:mdpp_default_ui_filter")
+      let filter = g:mdpp_default_ui_filter
+    else
+      throw "Default filter not set. Define g:mdpp_default_ui_filter and try again."
+    endif
+    call s:indexView(filter, a:indexType)
+    if len(filter) && (len(a:reset) || !exists("g:mdpp_default_ui_filter"))
+      let g:mdpp_default_ui_filter = filter
+    endif
+  endfunction
+
+  " @arg reset:     should I set this filter to be the default
+  " @arg filter:    either <dirname>/<filename> or <dirname>
+  function! md#ui#todoCommand(reset, ...)
+    let str = a:0 ? a:1 : ''
+    let filter = ''
+    if len(str)
+      let filter = str
+    elseif exists("g:mdpp_default_ui_filter")
+      let filter = g:mdpp_default_ui_filter
+    else
+      throw "Default filter not set. Define g:mdpp_default_ui_filter and try again."
+    endif
+    call s:todoListView(filter)
+    if len(filter) && (len(a:reset) || !exists("g:mdpp_default_ui_filter"))
+      let g:mdpp_default_ui_filter = filter
     endif
   endfunction
 

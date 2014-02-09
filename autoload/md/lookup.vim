@@ -24,6 +24,39 @@ function! s:removeTrailingSlash(path)
   return substitute(a:path, '/$', "", "")
 endfunction
 
+function! s:isOnPath(file)
+  let dir = s:removeTrailingSlash(fnamemodify(a:file, ':h'))
+  let fullDir = fnamemodify(dir, ':p')
+  let response = 0
+  for pathDir in g:mdpp_path
+    if resolve(pathDir) ==# resolve(fullDir)
+      let response = 1
+    endif
+  endfor
+  return response
+endfunction
+
+" given a full filepath, return the <folder> in mdpp_path for that file
+function! s:getFolder(path)
+  if s:isOnPath(a:path)
+    let dir = fnamemodify(a:path, ":h")
+    let folder = fnamemodify(dir, ":t")
+    return folder
+  else
+    throw fnamemodify(a:path, ":p") . " is not on the mdpp path!"
+  endif
+endfunction
+
+" given a full filepath, return the <filename> for that file
+function! s:getFilename(path)
+  return substitute(fnamemodify(a:path, ":t"), "\.md$", "", "")
+endfunction
+
+" given a full filepath, return the <folder>/<filename> for that file
+function! md#lookup#reverse(path)
+  return s:getFolder(a:path) . "/" . s:getFilename(a:path)
+endfunction
+
 function! md#lookup#resolveDir(dir)
   for directory in g:mdpp_path
     if a:dir ==# fnamemodify(s:removeTrailingSlash(directory), ":t")
@@ -141,8 +174,8 @@ function! s:findAndOpen(splitType, str)
   return path
 endfunction
 
-" @arg splitType: where to open the file
 " @arg reset:     should I set this file to be the default
+" @arg splitType: where to open the file
 " @arg str:       either <dirname>/<filename> or <filename>
 function! md#lookup#notesCommand(reset, splitType, ...)
   let str = a:0 ? a:1 : ''
@@ -157,6 +190,9 @@ function! md#lookup#notesCommand(reset, splitType, ...)
   endif
   if len(path) && (len(a:reset) || !exists("g:mdpp_default_file"))
     let g:mdpp_default_file = path
+  endif
+  if len(path) && (len(a:reset) || !exists("g:mdpp_default_ui_filter"))
+    let g:mdpp_default_ui_filter = md#lookup#reverse(path)
   endif
 endfunction
 
@@ -238,34 +274,6 @@ function! s:autocompleteOptions(str)
   endif
 endfunction
 
-function! s:isOnPath(file)
-  let dir = s:removeTrailingSlash(fnamemodify(a:file, ':h'))
-  let fullDir = fnamemodify(dir, ':p')
-  let response = 0
-  for pathDir in g:mdpp_path
-    if resolve(pathDir) ==# resolve(fullDir)
-      let response = 1
-    endif
-  endfor
-  return response
-endfunction
-
-" given a full filepath, return the <folder> in mdpp_path for that file
-function! s:getFolder(path)
-  if s:isOnPath(a:path)
-    let dir = fnamemodify(a:path, ":h")
-    let folder = fnamemodify(dir, ":t")
-    return folder
-  else
-    throw fnamemodify(a:path, ":p") . " is not on the mdpp path!"
-  endif
-endfunction
-
-" given a full filepath, return the <filename> for that file
-function! s:getFilename(path)
-  return substitute(fnamemodify(a:path, ":t"), "\.md$", "", "")
-endfunction
-
 function! md#lookup#autocomplete(argLead, cmdLine, cursorPos)
   let fullPaths = s:autocompleteOptions(a:argLead)
   let opts = []
@@ -275,9 +283,4 @@ function! md#lookup#autocomplete(argLead, cmdLine, cursorPos)
     call add(opts, folder . "/" . fname)
   endfor
   return opts
-endfunction
-
-" given a full filepath, return the <folder>/<filename> for that file
-function! md#lookup#reverse(path)
-  return s:getFolder(a:path) . "/" . s:getFilename(a:path)
 endfunction

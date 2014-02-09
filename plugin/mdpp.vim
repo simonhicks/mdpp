@@ -17,4 +17,7 @@ if exists("g:mdpp_path") && len(g:mdpp_path)
   command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete HNotes call md#lookup#notesCommand(<q-bang>, 'split', <f-args>)
   command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete VNotes call md#lookup#notesCommand(<q-bang>, 'vert', <f-args>)
   command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete TNotes call md#lookup#notesCommand(<q-bang>, 'tab', <f-args>)
+
+  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete Index call md#ui#indexCommand(<q-bang>, 'headings', <f-args>)
+  command! -nargs=* -bang -complete=customlist,md#lookup#autocomplete Todos call md#ui#todoCommand(<q-bang>, <f-args>)
 endif
