@@ -20,9 +20,13 @@ function! s:resolveFile(name)
   return ""
 endfunction
 
+function! s:removeTrailingSlash(path)
+  return substitute(a:path, '/$', "", "")
+endfunction
+
 function! md#lookup#resolveDir(dir)
   for directory in g:mdpp_path
-    if a:dir ==# fnamemodify(directory, ":t")
+    if a:dir ==# fnamemodify(s:removeTrailingSlash(directory), ":t")
       return fnamemodify(directory, ":p")
     endif
   endfor
@@ -152,7 +156,7 @@ endfunction
 function! s:directoryOptions(str)
   let opts = []
   for directory in g:mdpp_path
-    let dir = fnamemodify(directory, ":t")
+    let dir = fnamemodify(s:removeTrailingSlash(directory), ":t")
     if match(dir, "^" . a:str) != -1
       call add(opts, fnamemodify(directory, ":p"))
     endif
@@ -161,7 +165,8 @@ function! s:directoryOptions(str)
 endfunction
 
 function! s:completeMatchDir(dir)
-  for directory in g:mdpp_path
+  for pathDir in g:mdpp_path
+    let directory = s:removeTrailingSlash(pathDir)
     if fnamemodify(directory, ":t") ==# a:dir
       return fnamemodify(directory, ":p")
     endif
@@ -225,13 +230,15 @@ function! s:autocompleteOptions(str)
 endfunction
 
 function! s:isOnPath(file)
-  let dir = fnamemodify(a:file, ':h')
+  let dir = s:removeTrailingSlash(fnamemodify(a:file, ':h'))
   let fullDir = fnamemodify(dir, ':p')
-  for dir in g:mdpp_path
-    if resolve(dir) ==# fullDir
-      return 1
+  let response = 0
+  for pathDir in g:mdpp_path
+    if resolve(pathDir) ==# resolve(fullDir)
+      let response = 1
     endif
   endfor
+  return response
 endfunction
 
 " given a full filepath, return the <folder> in mdpp_path for that file
