@@ -101,6 +101,10 @@ function! s:headings(file)
   return headings
 endfunction
 
+function! s:todos(file)
+  return filter(s:headings(a:file), "has_key(v:val, 'state') && (len(v:val['state']) > 0)")
+endfunction
+
 function! s:addBranch(structure, branch)
   if len(a:structure) > 0
     let lastNode = a:structure[-1]
