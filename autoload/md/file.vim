@@ -92,8 +92,8 @@ function! s:headings(file)
   while lnum <= max
     let nextLine = (lnum < max) && (len(lines) > 0) ? lines[lnum + 1] : ''
     let heading = s:parseHeading(lines[lnum], md#str#trim(nextLine))
-    let heading['location'] = a:file
-    if len(heading)
+    let heading['location'] = md#lookup#reverse(a:file)
+    if has_key(heading, "level") && (heading.level > 0)
       call add(headings, heading)
     endif
     let lnum = lnum + 1
