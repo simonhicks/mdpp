@@ -54,3 +54,4 @@ if g:with_todo_features
   nnoremap <buffer> [d :call md#core#decTodo()<CR>
   nnoremap <buffer> ]d :call md#core#incTodo()<CR>
 endif
+
