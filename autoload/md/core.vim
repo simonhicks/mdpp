@@ -1,17 +1,3 @@
-" code folding
-
-function! md#core#fold(lnum)
-  if md#line#isBlank(a:lnum)
-    return '-1'
-  endif
-  let l = md#line#sectionLevel(a:lnum)
-  if md#line#isHeading(a:lnum)
-    return '>' . l
-  else
-    return '' . l
-  endif
-endfunction
-
 " text objects
 
 function! md#core#insideSection()
