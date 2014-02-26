@@ -1,6 +1,3 @@
-" FIXME the section moving functions ({move,raise}Section{Fowrard,Back}) are buggy as hell. Solution is
-"       probably to work out where to move to *before* deleting
-
 " code folding
 
 function! md#core#fold(lnum)

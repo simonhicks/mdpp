@@ -3,10 +3,6 @@
 " - syntax for md filetype
 " - option to switch off interactive features (todo, tables, shell)
 
-" code folding
-setlocal foldmethod=expr
-setlocal foldexpr=md#core#fold(v:lnum)
-
 " operator pending mappings
 onoremap <buffer> is :call md#core#insideSection()<CR>
 onoremap <buffer> as :call md#core#aroundSection(1)<CR>
@@ -59,3 +55,4 @@ if g:with_todo_features
   nnoremap <buffer> [d :call md#core#decTodo()<CR>
   nnoremap <buffer> ]d :call md#core#incTodo()<CR>
 endif
+
