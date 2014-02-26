@@ -1,3 +1,6 @@
+" FIXME the section moving functions ({move,raise}Section{Fowrard,Back}) are buggy as hell. Solution is
+"       probably to work out where to move to *before* deleting
+
 " code folding
 
 function! md#core#fold(lnum)
@@ -102,9 +105,31 @@ endfunction
 
 " tree manipulation
 
-function! md#core#incHeading()
+" call a:fn with pos '.' at each child heading in succession
+function! s:eachChildHeading(fn, args)
   let pos = getpos('.')
   try
+    let moved = md#move#toFirstChildHeading()
+    let lines = []
+    while moved !=# -1
+      call add(lines, moved)
+      let moved = md#move#toNextSibling()
+    endwhile
+    for line in lines
+      call setpos('.', [0, line, 0, 0])
+      call call(a:fn, a:args)
+    endfor
+  finally
+    call setpos('.', pos)
+  endtry
+endfunction
+
+function! md#core#incHeading(cascade)
+  let pos = getpos('.')
+  try
+    if a:cascade
+      call s:eachChildHeading("md#core#incHeading", [1])
+    endif
     normal! l
     call md#move#toParentHeading()
     let underline = md#line#underlinedHeadingLevel('.')
@@ -121,9 +146,12 @@ function! md#core#incHeading()
   endtry
 endfunction
 
-function! md#core#decHeading()
+function! md#core#decHeading(cascade)
   let pos = getpos('.')
   try
+    if a:cascade
+      call s:eachChildHeading("md#core#decHeading", [1])
+    endif
     normal! l
     call md#move#toParentHeading()
     let underline = md#line#underlinedHeadingLevel('.')
@@ -139,34 +167,66 @@ function! md#core#decHeading()
   endtry
 endfunction
 
-" NOTE: this depends on the user's mappings for " & d being the defaults.
-" Hopefully that's not going to be a problem
-function! md#core#raiseSectionBack()
-  let stored = @a
+function! s:moveSection(...)
+  let movefuncs = a:000
+  let storedRegister = @a
+  let storedMarkA = md#mark#get('a')
+  let storedMarkB = md#mark#get('b')
   try
-    let level = md#line#sectionLevel('.')
-    normal "adas
-    call md#move#upToLevel(level - 1, 0)
-    normal! "aP
-    call md#core#decHeading()
+    call md#move#ensureHeading()
+    call md#mark#set('a')
+    for movefunc in movefuncs
+      call call(movefunc, [])
+    endfor
+    call md#mark#set('b')
+    if md#mark#get('a') !=# md#mark#get('b')
+      call md#mark#set('.', 'a')
+      exec 'normal! "ad:call md#core#aroundSection(1)'
+      call md#mark#set('.', 'b')
+      normal! "aP
+    endif
   finally
-    let @a = stored
+    let @a = storedRegister
+    call md#mark#set("a", storedMarkA)
+    call md#mark#set("b", storedMarkB)
   endtry
 endfunction
 
-" NOTE: this depends on the user's mappings for " & d being the defaults.
-" Hopefully that's not going to be a problem
+function! md#core#moveSectionBack()
+  call s:moveSection("md#move#toPreviousSibling")
+endfunction
+
+function! md#core#moveSectionForward()
+  let before = md#mark#get('.')
+  call md#move#toNextSibling()
+  if md#mark#get('.') !=# before
+    call md#core#moveSectionBack()
+    call md#move#toNextSibling()
+  endif
+endfunction
+
+function! md#core#raiseSectionBack()
+  call s:moveSection("md#move#toParentHeading")
+  call md#core#decHeading(1)
+endfunction
+
 function! md#core#raiseSectionForward()
-  let stored = @a
+  let before = md#mark#get('.')
+  call md#core#raiseSectionBack()
+  if md#mark#get('.') !=# before
+    call md#core#moveSectionForward()
+  endif
+endfunction
+
+function! md#core#nestSection()
+  let storedRegister = @a
   try
-    let level = md#line#sectionLevel('.')
-    normal "adas
-    normal! k
-    call md#move#downToLevel(level - 1, 0)
-    normal! "aP
-    call md#core#decHeading()
+    call md#move#ensureHeading()
+    normal! yyPj
+    call md#core#incHeading(1)
+    exec 'normal! k"ad:call md#core#insideHeading()'
   finally
-    let @a = stored
+    let @a = storedRegister
   endtry
 endfunction
 

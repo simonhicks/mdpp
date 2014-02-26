@@ -1,7 +1,7 @@
 " TODO
+" - ensure no mappings are overwritten
 " - syntax for md filetype
 " - option to switch off interactive features (todo, tables, shell)
-" - option to switch off directories features (index, :Notes, etc.)
 
 " code folding
 setlocal foldmethod=expr
@@ -27,10 +27,15 @@ vnoremap <buffer> im :<C-u>call md#core#insideMetadata()<CR>
 vnoremap <buffer> am :<C-u>call md#core#aroundMetadata()<CR>
 
 " tree manipulation mappings
-nnoremap <buffer> [h :call md#core#decHeading()<CR>
-nnoremap <buffer> ]h :call md#core#incHeading()<CR>
-nnoremap <buffer> [m :call md#core#raiseSectionBack()<CR>
-nnoremap <buffer> ]m :call md#core#raiseSectionForward()<CR>
+nnoremap <buffer> [h :call md#core#decHeading(1)<CR>
+nnoremap <buffer> ]h :call md#core#incHeading(1)<CR>
+nnoremap <buffer> [H :call md#core#decHeading(0)<CR>
+nnoremap <buffer> ]H :call md#core#incHeading(0)<CR>
+nnoremap <buffer> [m :call md#core#moveSectionBack()<CR>
+nnoremap <buffer> ]m :call md#core#moveSectionForward()<CR>
+nnoremap <buffer> [M :call md#core#raiseSectionBack()<CR>
+nnoremap <buffer> ]M :call md#core#raiseSectionForward()<CR>
+nnoremap <buffer> gR :call md#core#nestSection()<CR>A
 
 " movement mappings
 nnoremap <buffer> [s :call md#move#toPreviousHeading()<CR>
