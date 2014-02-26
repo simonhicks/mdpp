@@ -211,10 +211,10 @@ if exists("g:mdpp_path")
 
   function! md#ui#updateUiFilter(onUpdate, resetDefault)
     let b:mdpp_ui_filter = input("New Filter: ", b:mdpp_ui_filter, "customlist,md#lookup#autocomplete")
-    execute "call " . a:onUpdate . "()"
-    if resetDefault
-      let g:mdpp_default_ui_filter = filter
+    if a:resetDefault
+      let g:mdpp_default_ui_filter = b:mdpp_ui_filter
     endif
+    execute "call " . a:onUpdate . "()"
   endfunction
 
   function! s:indexView(filter, indexType)
