@@ -42,3 +42,48 @@ if g:with_todo_features
     return md#str#headingPrefix(a:str) . content
   endfunction
 end
+
+let s:not_escape = '\\\@<!'
+
+function! s:removeWrapping(str, prefix, suffix)
+  return substitute(a:str, s:not_escape . a:prefix . '\(.\{-\}\)' . s:not_escape . a:suffix, '\=submatch(1)', "g")
+endfunction
+
+function! s:removeStrong(str)
+  return s:removeWrapping(s:removeWrapping(a:str, '\*\*', '\*\*'), '__', '__')
+endfunction
+
+function! s:removeEm(str)
+  return s:removeWrapping(s:removeWrapping(a:str, '\*', '\*'), '_', '_')
+endfunction
+
+function! s:removeLinks(str)
+  return s:removeWrapping(s:removeWrapping(a:str, '\[', '\]' . s:not_escape . '(.\{-\})'), '\[', '\]')
+endfunction
+
+function! s:removeStrikeout(str)
+  return s:removeWrapping(a:str, '\~\~', '\~\~')
+endfunction
+
+function! s:removeSubscript(str)
+  return s:removeWrapping(a:str, '\~', '\~')
+endfunction
+
+function! s:removeSuperscript(str)
+  return s:removeWrapping(a:str, '\^', '\^')
+endfunction
+
+function! s:removeFormattingAndLinks(str)
+  return s:removeSuperscript(s:removeSubscript(s:removeStrikeout(s:removeEm(s:removeStrong(s:removeLinks(a:str))))))
+endfunction
+
+function! md#str#identifier(header)
+  " TODO remove all footnotes
+  " remove all formatting and links
+  " TODO remove all punctuation (except underscores, hyphens and periods)
+  " TODO replace all spaces and newlines with hyphens
+  " TODO downcase
+  " TODO remove everything up to the first letter
+  " TODO if nothing is left, use 'section'
+endfunction
+
