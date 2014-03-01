@@ -41,8 +41,8 @@ function! s:highlightCodeSnippet(filetype,textSnipHl) abort
   else
     unlet b:current_syntax
   endif
-  let l:start = '[~`][~`][~`][~`]*.*\.' . a:filetype . '.*}'
-  let l:end = '[~`][~`][~`][~`]*'
+  let l:start = ' *[~`][~`][~`][~`]*.*\.' . a:filetype . '.*}'
+  let l:end = ' *[~`][~`][~`][~`]*'
   execute 'syntax region textSnip'.ft.'
   \ matchgroup='.a:textSnipHl.'
   \ start="'.l:start.'" end="'.l:end.'"
