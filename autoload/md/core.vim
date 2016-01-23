@@ -1,3 +1,12 @@
+" insert footnote
+function! md#core#footnote()
+  let word = input("> ")
+  let old_a = @a
+  exec "normal! a[^".word."]\"aya]GopA: "
+  let @a = old_a
+  exec "normal! A"
+endfunction
+
 " code folding
 
 function! md#core#fold(lnum)

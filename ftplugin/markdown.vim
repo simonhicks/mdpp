@@ -1,7 +1,12 @@
 " TODO
 " - ensure no mappings are overwritten
-" - syntax for md filetype
 " - option to switch off interactive features (todo, tables, shell)
+
+" TODO insert mode mappings
+" - insert new subheading (same level as current heading)
+" - insert new footnote
+
+inoremap <buffer> <C-f> <ESC>:call md#core#footnote()<CR>
 
 " operator pending mappings
 onoremap <buffer> is :call md#core#insideSection()<CR>
@@ -55,4 +60,3 @@ if g:with_todo_features
   nnoremap <buffer> [d :call md#core#decTodo()<CR>
   nnoremap <buffer> ]d :call md#core#incTodo()<CR>
 endif
-
