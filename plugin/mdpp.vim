@@ -50,7 +50,7 @@ function! s:highlightCodeSnippet(filetype,textSnipHl) abort
 endfunction
 
 if !exists("g:mdpp_inline_highlight_syntaxes")
-  let g:mdpp_inline_highlight_syntaxes = ['java', 'javascript', 'c', 'cpp', 'ruby', 'python', 'coffee', 'haskell']
+  let g:mdpp_inline_highlight_syntaxes = ['java', 'javascript', 'c', 'cpp', 'ruby', 'python', 'coffee', 'haskell', 'clojure', 'bash', 'groovy', 'scala', 'yaml', 'vim']
 endif
 
 function! s:highlightCodeSnippets()
