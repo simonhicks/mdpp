@@ -60,3 +60,9 @@ if g:with_todo_features
   nnoremap <buffer> [d :call md#core#decTodo()<CR>
   nnoremap <buffer> ]d :call md#core#incTodo()<CR>
 endif
+
+if exists("g:mdpp_repl_configs")
+  nnoremap <silent> cp :set operatorfunc=md#repl#dynamicReplOperator<cr>g@
+  vnoremap <silent> cp :<c-u>call md#repl#dynamicReplOperator(visualmode())<cr>
+  nnoremap <silent> cpp :call md#repl#dynamicReplOperator(v:count1)<CR>
+endif
