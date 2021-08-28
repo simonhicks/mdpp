@@ -13,7 +13,7 @@ function! s:repl_type(lnum)
 endfunction
 
 function! s:repl_name(repl_type)
-  return 'mdpp_' . bufnr('.') . '_' . a:repl_type
+  return 'mdpp_' . bufnr('%') . '_' . a:repl_type
 endfunction
 
 function! s:dynamicReplSend(repl_type, lines)

@@ -52,7 +52,7 @@ endfunction
 if !exists("g:mdpp_inline_highlight_syntaxes")
   let g:mdpp_inline_highlight_syntaxes = ['java', 'javascript', 'json', 'c',
         \ 'cpp', 'ruby', 'python', 'haskell', 'clojure', 'sh', 'groovy', 'scala',
-        \ 'yaml', 'vim', 'sql', 'cntr', 'R']
+        \ 'yaml', 'vim', 'sql']
 endif
 
 function! s:highlightCodeSnippets()
